@@ -1,0 +1,1 @@
+# austria-rent-indexation-tool
