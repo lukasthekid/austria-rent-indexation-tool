@@ -2,7 +2,7 @@
  * AUTO-GENERATED from vpi_data.ods – do not edit manually.
  * Run: npm run update-vpi
  * Source: Statistik Austria VPI data
- * Generated: 2026-03-09
+ * Generated: 2026-03-10
  */
 
 export type VpiBaseName = 'VPI 2025' | 'VPI 2020' | 'VPI 2015' | 'VPI 2010' | 'VPI 2005' | 'VPI 2000' | 'VPI 1996' | 'VPI 1986';
