@@ -407,6 +407,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans">
+      {/* Rot-Weiß-Rot Akzent-Banner */}
+      <div className="flex h-1.5 w-full">
+        <div className="flex-1 bg-red-600" />
+        <div className="flex-1 bg-white" />
+        <div className="flex-1 bg-red-600" />
+      </div>
       <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
         <header className="mb-8 flex flex-col gap-4 border-b border-zinc-200 pb-8">
           <div className="flex items-center gap-3">
@@ -418,13 +424,21 @@ export default function Home() {
               className="h-12 w-auto"
             />
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-              MietCheck-AT
+              Ist Ihre Mietzinserhöhung rechtskonform?
             </h1>
           </div>
-          <p className="text-zinc-600">
-            Prüfen Sie, ob Ihre Mietzinserhöhung dem
-            Mieten-Wertsicherungsgesetz (MieWeG) entspricht.
+          <p className="text-lg text-zinc-600">
+            Ihre Mietzinserhöhung auf einen Klick geprüft – nach
+            österreichischem MieWeG. Kostenlos, nur für Österreich.
           </p>
+          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-600">
+            <p>
+              Das Mieten-Wertsicherungsgesetz (MieWeG) gilt ab 1. Jänner 2026
+              und begrenzt die zulässige Wertsicherung von Wohnungsmieten. Der
+              Rechner berechnet die maximal rechtmäßige Miete für Neuverträge
+              und Altverträge.
+            </p>
+          </div>
         </header>
 
         {/* Progress indicator */}
@@ -448,13 +462,13 @@ export default function Home() {
                 onClick={() => setStep(s)}
                 className={`flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors ${
                   step === s
-                    ? "bg-orange-100 font-semibold text-orange-700"
+                    ? "bg-red-50 font-semibold text-red-700"
                     : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
                 }`}
               >
                 <span
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-medium ${
-                    step === s ? "bg-orange-600 text-white" : "bg-zinc-200 text-zinc-600"
+                    step === s ? "bg-red-600 text-white" : "bg-zinc-200 text-zinc-600"
                   }`}
                 >
                   {i + 1}
@@ -500,7 +514,7 @@ export default function Home() {
                   key={val}
                   className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                     effectiveMode === val
-                      ? "border-orange-500 bg-orange-50"
+                      ? "border-red-600 bg-red-50"
                       : "border-zinc-200 hover:border-zinc-300"
                   }`}
                 >
@@ -516,7 +530,7 @@ export default function Home() {
                         setAltLastValorisationDate("");
                       }
                     }}
-                    className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500"
+                    className="mt-1 h-4 w-4 text-red-600 focus:ring-red-600"
                   />
                   <div>
                     <span className="block text-sm font-medium text-zinc-900">
@@ -543,7 +557,7 @@ export default function Home() {
                   <label
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                       altHadValorisation === false
-                        ? "border-orange-500 bg-orange-50"
+                        ? "border-red-600 bg-red-50"
                         : "border-zinc-200 hover:border-zinc-300"
                     }`}
                   >
@@ -555,7 +569,7 @@ export default function Home() {
                         setAltHadValorisation(false);
                         setAltLastValorisationDate("");
                       }}
-                      className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500"
+                      className="mt-1 h-4 w-4 text-red-600 focus:ring-red-600"
                     />
                     <span className="text-sm font-medium text-zinc-900">
                       Nein, noch keine Anpassung
@@ -564,7 +578,7 @@ export default function Home() {
                   <label
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                       altHadValorisation === true
-                        ? "border-orange-500 bg-orange-50"
+                        ? "border-red-600 bg-red-50"
                         : "border-zinc-200 hover:border-zinc-300"
                     }`}
                   >
@@ -573,7 +587,7 @@ export default function Home() {
                       name="altHadValorisation"
                       checked={altHadValorisation === true}
                       onChange={() => setAltHadValorisation(true)}
-                      className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500"
+                      className="mt-1 h-4 w-4 text-red-600 focus:ring-red-600"
                     />
                     <span className="text-sm font-medium text-zinc-900">
                       Ja
@@ -685,7 +699,7 @@ export default function Home() {
                       key={val}
                       className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
                         altvertragClause === val
-                          ? "border-orange-500 bg-orange-50"
+                          ? "border-red-600 bg-red-50"
                           : "border-zinc-200 hover:border-zinc-300"
                       }`}
                     >
@@ -695,7 +709,7 @@ export default function Home() {
                         value={val}
                         checked={altvertragClause === val}
                         onChange={() => setAltvertragClause(val)}
-                        className="mt-0.5 h-4 w-4 text-orange-600 focus:ring-orange-500"
+                        className="mt-0.5 h-4 w-4 text-red-600 focus:ring-red-600"
                       />
                       <div>
                         <span className="block text-sm font-medium text-zinc-900">
@@ -721,7 +735,7 @@ export default function Home() {
               <button
                 onClick={() => setStep("grunddaten")}
                 disabled={!canProceedFromStep1}
-                className="flex-1 rounded-md bg-orange-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Weiter
               </button>
@@ -756,7 +770,7 @@ export default function Home() {
                 type="date"
                 value={contractDate}
                 onChange={(e) => setContractDate(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
               />
               <p className="mt-1 text-xs text-zinc-500">
                 Datum, an dem Sie den Mietvertrag unterschrieben haben. Nicht
@@ -777,7 +791,7 @@ export default function Home() {
                 min="0"
                 value={currentRent}
                 onChange={(e) => setCurrentRent(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
               />
               <p className="mt-1 text-xs text-zinc-500">
                 Die Miete, die Sie derzeit zahlen (inkl. letzter Anpassung falls
@@ -797,7 +811,7 @@ export default function Home() {
                 onChange={(e) =>
                   setApartmentType(e.target.value as ApartmentType)
                 }
-                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
               >
                 <option value="free">
                   Freier Mietzins – z.B. Neubau, teilanwendungsbereich MRG
@@ -822,7 +836,7 @@ export default function Home() {
               <button
                 onClick={() => setStep("details")}
                 disabled={!canProceedFromStep2}
-                className="flex-1 rounded-md bg-orange-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Weiter
               </button>
@@ -854,7 +868,7 @@ export default function Home() {
                     onChange={(e) =>
                       setValorisationYear(Number(e.target.value))
                     }
-                    className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                   >
                     {VALORISATION_YEARS.map((y) => (
                       <option key={y} value={y}>
@@ -889,7 +903,7 @@ export default function Home() {
                     }
                     value={customVpi}
                     onChange={(e) => setCustomVpi(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                   />
                   <p className="mt-1 text-xs text-zinc-500">
                     Nur anpassen, wenn Sie andere Inflationsdaten verwenden
@@ -908,7 +922,7 @@ export default function Home() {
                     type="date"
                     value={lastValorisationDate}
                     onChange={(e) => setLastValorisationDate(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                   />
                   <p className="mt-1 text-xs text-zinc-500">
                     Wenn Ihre Miete bereits angehoben wurde: Monat der
@@ -921,7 +935,7 @@ export default function Home() {
                         type="checkbox"
                         checked={alreadyInMieWeG}
                         onChange={(e) => setAlreadyInMieWeG(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
+                        className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-red-600 focus:ring-red-600"
                       />
                       <span>
                         Letzte Anpassung war bereits nach MieWeG (ab 1.4.2026)
@@ -949,7 +963,7 @@ export default function Home() {
                       onChange={(e) =>
                         setAltTargetYear(Number(e.target.value))
                       }
-                      className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                     >
                       {VALORISATION_YEARS.map((y) => (
                         <option key={y} value={y}>
@@ -979,7 +993,7 @@ export default function Home() {
                         onChange={(e) =>
                           setVpiBase(e.target.value as VpiBaseName)
                         }
-                        className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                       >
                         {VPI_BASE_NAMES.map((name) => (
                           <option key={name} value={name}>
@@ -1012,7 +1026,7 @@ export default function Home() {
                         onChange={(e) =>
                           setAdjustmentMonth(Number(e.target.value))
                         }
-                        className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                       >
                         {months.map((m, i) => (
                           <option key={i} value={i}>
@@ -1043,7 +1057,7 @@ export default function Home() {
                           min="0"
                           value={thresholdPercent}
                           onChange={(e) => setThresholdPercent(e.target.value)}
-                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                         />
                         <p className="mt-1 text-xs text-zinc-500">
                           Ab welcher kumulativen VPI-Änderung wird die Miete
@@ -1069,7 +1083,7 @@ export default function Home() {
                           }
                           value={baseIndexValue}
                           onChange={(e) => setBaseIndexValue(e.target.value)}
-                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                         />
                         {defaultBaseIndex != null && !baseIndexValue && (
                           <button
@@ -1077,7 +1091,7 @@ export default function Home() {
                             onClick={() =>
                               setBaseIndexValue(defaultBaseIndex.toFixed(1))
                             }
-                            className="mt-1.5 text-xs text-orange-600 hover:underline"
+                            className="mt-1.5 text-xs text-red-600 hover:underline"
                           >
                             Ø {contractYear} übernehmen:{" "}
                             {defaultBaseIndex.toFixed(1)}
@@ -1090,7 +1104,7 @@ export default function Home() {
                             href="https://data.statistik.gv.at"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-orange-600 hover:underline"
+                            className="text-red-600 hover:underline"
                           >
                             data.statistik.gv.at
                           </a>
@@ -1152,7 +1166,7 @@ export default function Home() {
                           min="0"
                           value={staffelValue}
                           onChange={(e) => setStaffelValue(e.target.value)}
-                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                         />
                       </div>
                       <div>
@@ -1168,7 +1182,7 @@ export default function Home() {
                           onChange={(e) =>
                             setStaffelMonth(Number(e.target.value))
                           }
-                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                         >
                           {months.map((m, i) => (
                             <option key={i} value={i}>
@@ -1191,7 +1205,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setStep("ergebnis")}
-                className="flex-1 rounded-md bg-orange-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 "
+                className="flex-1 rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 "
               >
                 Berechnen
               </button>
@@ -1271,7 +1285,7 @@ export default function Home() {
                             type="monotone"
                             dataKey="rentEur"
                             name="Miete"
-                            stroke="#ea580c"
+                            stroke="#c8102e"
                             strokeWidth={2}
                             dot={{ r: 3 }}
                           />
@@ -1397,7 +1411,7 @@ export default function Home() {
                           return [`${numericValue.toFixed(4)}%`, "Satz"];
                         }}
                       />
-                      <Bar dataKey="percent" fill="#ea580c" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="percent" fill="#c8102e" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -1429,7 +1443,7 @@ export default function Home() {
                   placeholder="z.B. 830"
                   value={proposedRent}
                   onChange={(e) => setProposedRent(e.target.value)}
-                  className="mt-1 block w-full max-w-xs rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="mt-1 block w-full max-w-xs rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                 />
                 {proposedValid && (
                   <p className="mt-2 text-sm font-medium text-green-600">
@@ -1454,6 +1468,102 @@ export default function Home() {
             </button>
           </section>
         )}
+
+        {/* FAQ für SEO – Accordion mit details/summary + Tailwind */}
+        <section
+          className="mt-12 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"
+          aria-labelledby="faq-heading"
+        >
+          <h2
+            id="faq-heading"
+            className="border-b border-zinc-200 bg-zinc-50 px-6 py-4 text-lg font-semibold text-zinc-900"
+          >
+            Häufige Fragen zum MieWeG
+          </h2>
+          <div className="divide-y divide-zinc-200">
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
+                Ab wann gilt das neue MieWeG?
+                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </summary>
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 text-sm text-zinc-600">
+                Das Mieten-Wertsicherungsgesetz (MieWeG) gilt ab 1. Jänner 2026
+                und betrifft sowohl neu abgeschlossene Mietverträge als auch
+                bestehende Altverträge. Die erste mögliche Anpassung nach MieWeG
+                erfolgt zum 1. April 2026.
+              </div>
+            </details>
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
+                Was ist die maximale Mietzinserhöhung?
+                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </summary>
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 text-sm text-zinc-600">
+                Liegt die Inflation unter 3 %, gilt die volle VPI-Änderung. Bei
+                Inflation über 3 % wird der darüberliegende Teil nur zur Hälfte
+                berücksichtigt (z.B. bei 6 % Inflation ≈ 4,5 % zulässige
+                Erhöhung). Für preisgeschützte Wohnungen gelten niedrigere
+                Obergrenzen: 2026 maximal 1 %, 2027 maximal 2 %.
+              </div>
+            </details>
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
+                Gilt das MieWeG auch für meinen Altvertrag?
+                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </summary>
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 text-sm text-zinc-600">
+                Ja. Das MieWeG gilt für alle Wohnungsmietverträge – unabhängig
+                vom Abschlussdatum. Bei Altverträgen mit Wertsicherungsklausel
+                wird die Parallelrechnung angewendet: Maßgeblich ist der
+                niedrigere Wert aus Vertragsklausel und MieWeG-Begrenzung.
+              </div>
+            </details>
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
+                Wann darf die Miete angepasst werden?
+                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </summary>
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 text-sm text-zinc-600">
+                Wertsicherungen sind nur einmal jährlich zum 1. April zulässig –
+                unabhängig von abweichenden Klauseln in Ihrem Vertrag. Dies gilt
+                ab 2026 für alle von MieWeG erfassten Mietverträge.
+              </div>
+            </details>
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
+                Wie prüfe ich meine Mietzinserhöhung?
+                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </summary>
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 text-sm text-zinc-600">
+                Geben Sie Ihre aktuelle Miete, Vertragsdaten und ggf. die
+                letzte Indexierung in den Rechner ein. Er zeigt die maximal
+                zulässige Miete. Ist die vom Vermieter geforderte Erhöhung
+                höher, können Sie sie anfechten oder rechtliche Beratung
+                einholen.
+              </div>
+            </details>
+          </div>
+        </section>
 
         <footer className="mt-12 space-y-4">
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-600">
