@@ -1,106 +1,119 @@
-# Austria Rent Indexation Tool (MietCheck-AT)
+# MietCheck-AT
 
-A web application to calculate legally compliant rent increases under the Austrian **Mieten-Wertsicherungsgesetz (MieWeG)**, effective April 1, 2026. Supports both **Neuverträge** (new contracts) and **Altverträge** (existing contracts with various indexation clauses).
+> Mietzinserhöhung prüfen – MieWeG Rechner für Österreich
+
+Webanwendung zur Berechnung rechtskonformer Mietzinserhöhungen nach dem österreichischen **Mieten-Wertsicherungsgesetz (MieWeG)** (gültig ab 1. April 2026).
+
+## Live Demo
+
+**[https://mietcheck-at.vercel.app/](https://mietcheck-at.vercel.app/)**
+
+Prüfen Sie kostenlos, ob Ihre Mietzinserhöhung rechtskonform ist – für Neuverträge und Altverträge.
+
+---
 
 ## Features
 
-- **Neuvertrag (new contract):** Single or multi-year MieWeG valorisation with 3% cap, preisgeschützt caps (2026: 1%, 2027: 2%), and aliquotierung (proportional first-year adjustment)
-- **Altvertrag (existing contract):** Parallelrechnung comparing Vertragskurve (contract clause) vs. Begrenzungskurve (MieWeG limit). Payable rent = min of both, only when the contract triggers an increase
-- **Contract clause types:** VPI annual, VPI threshold (cumulative), Staffelmiete (fixed % or amount)
-- **VPI data:** Uses Statistik Austria Jahresdurchschnittswerte; unrounded YoY change per MieWeG requirement
+- **Neuvertrag (ab 1.1.2026):** MieWeG-Valorisierung mit 3%-Deckel, preisgeschützte Obergrenzen (2026: 1%, 2027: 2%), Aliquotierung bei Erstanpassung
+- **Altvertrag (vor 1.1.2026):** Parallelrechnung: Vertragskurve vs. MieWeG-Begrenzung – maßgeblich ist der niedrigere Wert
+- **Vertragsklauseln:** VPI jährlich, VPI-Schwellenwert, Staffelmiete
+- **VPI-Daten:** Statistik Austria Jahresdurchschnittswerte, ungerundete Vorjahresänderung gemäß MieWeG
 
-## Calculation Logic
+## Berechnungslogik
 
-### MieWeG Basics
+### MieWeG-Grundlagen
 
-Implementation reference: `lib/mieweg.ts`
+Referenz: `lib/mieweg.ts`
 
-- **First indexation date:** April 1 of (contractYear + 1) for contracts Jan–Nov; December contracts → April year+2
-- **Effective rate formula:** If VPI change > 3%, then `3 + (VPI − 3) / 2`; otherwise full VPI change
-- **Aliquotierung:** For first valorisation, rate × (fullMonths/12) in the prior year
-- **Multi-year:** Periodengerecht (chain year-by-year from last valorisation)
-- **Preisgeschützt (regulated apartments):** 2026 max 1%, 2027 max 2%
+- **Erster Anpassungstermin:** 1. April im Jahr (Vertragsjahr + 1) für Verträge Jan–Nov; Dezember-Verträge → April Jahr+2
+- **Effektiver Satz:** Bei VPI > 3%: `3 + (VPI − 3) / 2`; sonst volle VPI-Änderung
+- **Aliquotierung:** Bei erster Valorisierung: Satz × (volle Monate/12) im Vorjahr
+- **Mehrjährig:** Periodengerecht (jahrweise verkettet ab letzter Valorisierung)
+- **Preisgeschützt:** 2026 max 1%, 2027 max 2%
 
 ### Parallelrechnung
 
-Implementation reference: `lib/parallelrechnung.ts`
+Referenz: `lib/parallelrechnung.ts`
 
 ```
-Vertragskurve = rent per contract clause (uncapped)
-Begrenzungskurve = MieWeG maximum rent
-Actual rent = min(Vertragskurve, Begrenzungskurve) when contract triggers increase
+Vertragskurve = Miete gemäß Vertragsklausel (unbegrenzt)
+Begrenzungskurve = MieWeG-Maximalmiete
+Tatsächliche Miete = min(Vertragskurve, Begrenzungskurve), wenn Vertrag Erhöhung auslöst
 ```
 
-### Contract Clause Types
+### Vertragsklauseltypen
 
-Implementation reference: `lib/vertragskurve.ts`
+Referenz: `lib/vertragskurve.ts`
 
-| Type | Description |
-|------|-------------|
-| **vpiAnnual** | Annual adjustment by prior-year VPI change (shifted to April 1 per MieWeG § 1 Abs 4) |
-| **vpiThreshold** | Adjust when cumulative VPI change exceeds threshold (e.g. 5%) |
-| **staffel** | Fixed percentage or amount increase at a specified month each year |
+| Typ | Beschreibung |
+|-----|--------------|
+| **vpiAnnual** | Jährliche Anpassung an VPI-Vorjahresänderung (auf 1.4. verschoben, MieWeG § 1 Abs 4) |
+| **vpiThreshold** | Anpassung, wenn kumulierte VPI-Änderung Schwellenwert überschreitet (z.B. 5%) |
+| **staffel** | Fixe prozentuale oder betragsmäßige Erhöhung pro Jahr an einem festen Monat |
 
-## Getting Started
+## Lokale Entwicklung
 
-### Prerequisites
+### Voraussetzungen
 
 - Node.js 18+
 - npm
 
-### Installation & Run
+### Installation & Start
 
 ```bash
 npm install
-npm run dev      # Development server at http://localhost:3000
+npm run dev      # → http://localhost:3000
 ```
 
-### Other Commands
+### Weitere Befehle
 
 ```bash
-npm run build    # Production build
-npm run start    # Run production server
-npm run test     # Run Vitest tests
+npm run build    # Production-Build
+npm run start    # Production-Server
+npm run test     # Vitest-Tests
 npm run lint     # ESLint
 ```
 
-## Updating VPI Data
+## VPI-Daten aktualisieren
 
-VPI (Verbraucherpreisindex) data is sourced from **Statistik Austria** and must be updated periodically when new annual averages become available.
+VPI-Daten stammen von **Statistik Austria** und müssen periodisch aktualisiert werden.
 
-### Source
+### Quelle
 
-- [Statistik Austria – VPI 2020](https://data.statistik.gv.at/web/meta.jsp?dataset=OGD_vpi20_VPI_2020_1) (or equivalent ODS export)
+- [Statistik Austria – VPI 2020](https://data.statistik.gv.at/web/meta.jsp?dataset=OGD_vpi20_VPI_2020_1)
 
-### Workflow
+### Ablauf
 
-1. Download or export VPI Jahresdurchschnittswerte to ODS format from Statistik Austria
-2. Replace `vpi_data.ods` in the project root with the updated file
-   - Expected structure: rows with `Ø YYYY`, columns for "% zu Vorjahr", VPI 2025, VPI 2020, VPI 2015, VPI 2010, VPI 2005, VPI 2000, VPI 1996, VPI 1986
-3. Run: `npm run update-vpi`
-4. This regenerates `lib/vpi-data-generated.ts`
+1. VPI Jahresdurchschnittswerte als ODS von Statistik Austria exportieren
+2. `vpi_data.ods` im Projektroot ersetzen
+3. `npm run update-vpi` ausführen → regeneriert `lib/vpi-data-generated.ts`
 
-### Notes
+Erwartete Spalten: `Ø YYYY`, "% zu Vorjahr", VPI 2025, VPI 2020, VPI 2015, etc.
 
-- The script expects specific column indices. See `scripts/update-vpi-data.mjs`. If Statistik Austria changes its format, the script may need adjustment.
-- For years without official data, the app uses fallback estimates defined in `lib/vpi-data.ts` (currently 2026: 2.4%, 2027–2028: 2.0%).
+### Fallback
 
-## Project Structure
+Für Jahre ohne offizielle Daten verwendet die App Schätzwerte in `lib/vpi-data.ts` (aktuell 2026: 2,4%, 2027–2028: 2,0%).
+
+## Projektstruktur
 
 ```
-├── app/           # Next.js app router (layout, main wizard page)
-├── lib/           # Core logic
-│   ├── mieweg.ts           # MieWeG calculation
-│   ├── vertragskurve.ts    # Contract clause curves
-│   ├── parallelrechnung.ts # Vertrag vs. Begrenzung comparison
-│   ├── vpi-data.ts         # VPI API (wraps generated data)
-│   └── vpi-data-generated.ts  # Auto-generated from vpi_data.ods
+├── app/                 # Next.js App Router
+│   ├── layout.tsx       # Metadata, SEO, JSON-LD
+│   ├── page.tsx         # Wizard-UI
+│   ├── robots.ts
+│   └── sitemap.ts
+├── lib/
+│   ├── mieweg.ts
+│   ├── vertragskurve.ts
+│   ├── parallelrechnung.ts
+│   ├── vpi-data.ts
+│   └── vpi-data-generated.ts
 ├── scripts/
-│   └── update-vpi-data.mjs # Regenerates vpi-data-generated.ts from ODS
-├── types/         # Route and validator types
-└── vpi_data.ods   # Source VPI data (manual update)
+│   └── update-vpi-data.mjs
+├── types/
+└── vpi_data.ods
 ```
 
-## Disclaimer
+## Haftungsausschluss
 
-This tool is for **informational purposes only** and does not constitute legal advice. Rent indexation rules under MieWeG are complex and depend on individual circumstances. Always verify calculations with official sources (e.g. Statistik Austria, BMK) or a qualified professional before taking any action.
+Dieses Tool dient ausschließlich der **Orientierung** und ersetzt keine Rechtsberatung. MieWeG-Regeln sind komplex und fallabhängig. Bitte Berechnungen mit offiziellen Quellen (Statistik Austria, BMK) oder Fachpersonen prüfen, bevor Sie handeln.
