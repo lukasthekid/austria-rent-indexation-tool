@@ -38,6 +38,9 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   alternates: { canonical: "/" },
+  other: {
+    "google-adsense-account": "ca-pub-9500199606572767",
+  },
 };
 
 const faqSchema = {
