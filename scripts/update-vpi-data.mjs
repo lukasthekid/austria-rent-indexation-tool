@@ -1,19 +1,22 @@
 #!/usr/bin/env node
 /**
- * Reads vpi_data.ods and generates lib/vpi-data-generated.ts
+ * Downloads VPI ODS from Statistik Austria and generates lib/vpi-data-generated.ts
  *
  * Usage: npm run update-vpi
- * Workflow: Replace vpi_data.ods with updated file from Statistik Austria, then run.
+ * Workflow: Fetches 2_Verbraucherpreisindizes_ab_1990.ods from Statistik Austria,
+ * parses it and regenerates vpi-data-generated.ts.
  */
 
-import { readFileSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 
+const STATISTIK_AUSTRIA_ODS_URL =
+  'https://www.statistik.at/fileadmin/pages/214/2_Verbraucherpreisindizes_ab_1990.ods';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-const ODS_PATH = join(ROOT, 'vpi_data.ods');
 const OUTPUT_PATH = join(ROOT, 'lib', 'vpi-data-generated.ts');
 
 const VPI_COLUMNS = {
@@ -40,39 +43,69 @@ function parseYear(label) {
   return y;
 }
 
-const workbook = XLSX.readFile(ODS_PATH);
-const sheetName = workbook.SheetNames[0];
-const sheet = workbook.Sheets[sheetName];
-const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+async function main() {
+  console.log('Downloading VPI data from Statistik Austria...');
 
-const data = {};
-for (const key of Object.keys(VPI_COLUMNS)) {
-  data[key] = {};
-}
-let yoyChanges = {};
+  let response;
+  try {
+    response = await fetch(STATISTIK_AUSTRIA_ODS_URL);
+  } catch (err) {
+    console.error('Network error:', err.message);
+    process.exit(1);
+  }
 
-for (const row of rows) {
-  const label = String(row[0] ?? '');
-  if (!label.startsWith('Ø')) continue;
+  if (!response.ok) {
+    console.error(`Download failed: HTTP ${response.status} ${response.statusText}`);
+    process.exit(1);
+  }
 
-  const year = parseYear(label);
-  if (!year) continue;
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
 
-  const yoy = parseNumber(String(row[1] ?? ''));
-  if (yoy != null) yoyChanges[year] = yoy;
+  if (buffer.length === 0) {
+    console.error('Downloaded file is empty');
+    process.exit(1);
+  }
 
-  for (const [vpiName, colIdx] of Object.entries(VPI_COLUMNS)) {
-    const val = parseNumber(String(row[colIdx] ?? ''));
-    if (val != null) {
-      data[vpiName][year] = val;
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+
+  const data = {};
+  for (const key of Object.keys(VPI_COLUMNS)) {
+    data[key] = {};
+  }
+  let yoyChanges = {};
+
+  for (const row of rows) {
+    const label = String(row[0] ?? '');
+    if (!label.startsWith('Ø')) continue;
+
+    const year = parseYear(label);
+    if (!year) continue;
+
+    const yoy = parseNumber(String(row[1] ?? ''));
+    if (yoy != null) yoyChanges[year] = yoy;
+
+    for (const [vpiName, colIdx] of Object.entries(VPI_COLUMNS)) {
+      const val = parseNumber(String(row[colIdx] ?? ''));
+      if (val != null) {
+        data[vpiName][year] = val;
+      }
     }
   }
-}
 
-let ts = `/**
- * AUTO-GENERATED from vpi_data.ods – do not edit manually.
+  const yoyYears = Object.keys(yoyChanges).map(Number).sort((a, b) => a - b);
+  if (yoyYears.length === 0) {
+    console.error('No VPI data found in downloaded file');
+    process.exit(1);
+  }
+
+  let ts = `/**
+ * AUTO-GENERATED from Statistik Austria ODS – do not edit manually.
  * Run: npm run update-vpi
- * Source: Statistik Austria VPI data
+ * Source: ${STATISTIK_AUSTRIA_ODS_URL}
  * Generated: ${new Date().toISOString().split('T')[0]}
  */
 
@@ -87,34 +120,36 @@ export const VPI_BASE_NAMES: VpiBaseName[] = [${Object.keys(VPI_COLUMNS).map(k =
  */
 export const VPI_ALL_BASES: Record<VpiBaseName, Record<number, number>> = {\n`;
 
-for (const [vpiName, values] of Object.entries(data)) {
-  const years = Object.keys(values).map(Number).sort((a, b) => a - b);
-  if (years.length === 0) continue;
+  for (const [vpiName, values] of Object.entries(data)) {
+    const years = Object.keys(values).map(Number).sort((a, b) => a - b);
+    if (years.length === 0) continue;
 
-  ts += `  '${vpiName}': {\n`;
-  for (const y of years) {
-    ts += `    ${y}: ${values[y]},\n`;
+    ts += `  '${vpiName}': {\n`;
+    for (const y of years) {
+      ts += `    ${y}: ${values[y]},\n`;
+    }
+    ts += `  },\n`;
   }
-  ts += `  },\n`;
-}
 
-ts += `};\n\n`;
+  ts += `};\n\n`;
 
-ts += `/**
+  ts += `/**
  * Published rounded YoY % change from ODS (column "% zu Vorjahr").
  * For unrounded calculations, compute from Jahresdurchschnittswerte directly.
  */
 export const VPI_PUBLISHED_YOY: Record<number, number> = {\n`;
 
-const yoyYears = Object.keys(yoyChanges).map(Number).sort((a, b) => a - b);
-for (const y of yoyYears) {
-  ts += `  ${y}: ${yoyChanges[y]},\n`;
+  for (const y of yoyYears) {
+    ts += `  ${y}: ${yoyChanges[y]},\n`;
+  }
+  ts += `};\n`;
+
+  writeFileSync(OUTPUT_PATH, ts, 'utf-8');
+
+  const baseCount = Object.keys(data).filter(k => Object.keys(data[k]).length > 0).length;
+  const yearRange = `${yoyYears[0]}–${yoyYears[yoyYears.length - 1]}`;
+  console.log(`✓ Generated ${OUTPUT_PATH}`);
+  console.log(`  ${baseCount} VPI bases, years ${yearRange}, ${yoyYears.length} annual averages`);
 }
-ts += `};\n`;
 
-writeFileSync(OUTPUT_PATH, ts, 'utf-8');
-
-const baseCount = Object.keys(data).filter(k => Object.keys(data[k]).length > 0).length;
-const yearRange = `${yoyYears[0]}–${yoyYears[yoyYears.length - 1]}`;
-console.log(`✓ Generated ${OUTPUT_PATH}`);
-console.log(`  ${baseCount} VPI bases, years ${yearRange}, ${yoyYears.length} annual averages`);
+main();

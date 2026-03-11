@@ -24,8 +24,6 @@ import {
 } from "@/lib/parallelrechnung";
 import type { ClauseType, ClauseParams } from "@/lib/vertragskurve";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Legend,
   Line,
@@ -54,6 +52,13 @@ const VALORISATION_YEARS = Array.from(
   (_, i) => MIN_VALORISATION_YEAR + i
 );
 
+// Neuvertrag: erste Anpassung 1.4.2027 → benötigt VPI 2026
+const NEUVERTRAG_FIRST_VALORISATION_YEAR = 2027;
+const NEUVERTRAG_MIN_CONTRACT_DATE = "2026-01-01";
+
+// Berechnung möglich, sobald offizielle VPI-Daten für 2026 vorliegen
+const NEUVERTRAG_AVAILABLE = (MAX_OFFICIAL_INFLATION_YEAR ?? 0) >= 2026;
+
 function formatEur(cents: number): string {
   return new Intl.NumberFormat("de-AT", {
     style: "currency",
@@ -78,6 +83,83 @@ function asNumber(value: unknown): number | null {
   }
   if (Array.isArray(value) && value.length > 0) return asNumber(value[0]);
   return null;
+}
+
+function AliquotierungTimeline({
+  startMonthIndex,
+  months,
+}: {
+  startMonthIndex: number;
+  months: string[];
+}) {
+  const width = 400;
+  const height = 72;
+  const padding = { top: 8, right: 16, bottom: 28, left: 16 };
+  const chartWidth = width - padding.left - padding.right;
+  const segmentWidth = chartWidth / 12;
+  const lineY = padding.top + 16;
+  const strokeLineY = lineY + 4;
+
+  const startX =
+    padding.left + (startMonthIndex + 0.5) * segmentWidth;
+  const endX = padding.left + 12 * segmentWidth;
+  const arrowSize = 8;
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full max-w-lg"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden
+    >
+      {/* Month labels */}
+      {months.map((m, i) => (
+        <text
+          key={m}
+          x={padding.left + (i + 0.5) * segmentWidth}
+          y={height - 6}
+          textAnchor="middle"
+          fill="#71717a"
+          fontSize={10}
+        >
+          {m.slice(0, 3)}
+        </text>
+      ))}
+      {/* Baseline */}
+      <line
+        x1={padding.left}
+        y1={strokeLineY}
+        x2={padding.left + chartWidth}
+        y2={strokeLineY}
+        stroke="#e4e4e7"
+        strokeWidth={1}
+      />
+      {/* Red vertical start line */}
+      <line
+        x1={startX}
+        y1={padding.top}
+        x2={startX}
+        y2={strokeLineY}
+        stroke="#c8102e"
+        strokeWidth={3}
+        strokeLinecap="round"
+      />
+      {/* Horizontal arrow from start to end */}
+      <line
+        x1={startX}
+        y1={strokeLineY}
+        x2={endX - arrowSize * 0.6}
+        y2={strokeLineY}
+        stroke="#c8102e"
+        strokeWidth={2}
+      />
+      {/* Arrowhead */}
+      <polygon
+        points={`${endX},${strokeLineY} ${endX - arrowSize},${strokeLineY - arrowSize / 2} ${endX - arrowSize},${strokeLineY + arrowSize / 2}`}
+        fill="#c8102e"
+      />
+    </svg>
+  );
 }
 
 type WizardStep = "grunddaten" | "vertragsart" | "details" | "ergebnis";
@@ -135,10 +217,11 @@ export default function Home() {
 
   const canProceedFromStep1 =
     effectiveMode != null &&
-    (!isAltvertrag ||
-      (altHadValorisation !== null &&
+    (isAltvertrag
+      ? altHadValorisation !== null &&
         (altHadValorisation === false ||
-          altLastValorisationDate.trim() !== "")));
+          altLastValorisationDate.trim() !== "")
+      : NEUVERTRAG_AVAILABLE);
 
   // Neuvertrag result
   const inflationYear = valorisationYear - 1;
@@ -364,17 +447,6 @@ export default function Home() {
     valorisationYear,
   ]);
 
-  const aliquotChartData = useMemo(() => {
-    if (!aliquotVisual) return [];
-    return [
-      { label: "Volle Jahresrate", percent: aliquotVisual.baseRate },
-      {
-        label: `Aliquot ${aliquotVisual.fullMonths}/12`,
-        percent: aliquotVisual.aliquotRate,
-      },
-    ];
-  }, [aliquotVisual]);
-
   const months = [
     "Jänner",
     "Februar",
@@ -417,7 +489,7 @@ export default function Home() {
         <header className="mb-6 flex flex-col gap-3 border-b border-zinc-200 pb-6 sm:mb-8 sm:gap-4 sm:pb-8">
           <div className="flex min-w-0 items-start gap-3 sm:items-center">
             <Image
-              src="/logo_1.png"
+              src="/MietCheck-logo.png"
               alt="MietCheck-AT Logo"
               width={48}
               height={48}
@@ -517,40 +589,62 @@ export default function Home() {
                     "Oder Vertrag verweist auf MieWeG § 1 Abs 2",
                   ],
                 ] as const
-              ).map(([val, title, desc]) => (
-                <label
-                  key={val}
-                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-                    effectiveMode === val
-                      ? "border-red-600 bg-red-50"
-                      : "border-zinc-200 hover:border-zinc-300"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="contractMode"
-                    value={val}
-                    checked={effectiveMode === val}
-                    onChange={() => {
-                      setContractMode(val);
-                      if (val === "neuvertrag") {
-                        setAltHadValorisation(null);
-                        setAltLastValorisationDate("");
-                      }
-                    }}
-                    className="mt-1 h-4 w-4 text-red-600 focus:ring-red-600"
-                  />
-                  <div>
-                    <span className="block text-sm font-medium text-zinc-900">
-                      {title}
-                    </span>
-                    <span className="block text-xs text-zinc-500">
-                      {desc}
-                    </span>
-                  </div>
-                </label>
-              ))}
+              ).map(([val, title, desc]) => {
+                const isNeuvertragUnavailable =
+                  val === "neuvertrag" && !NEUVERTRAG_AVAILABLE;
+                return (
+                  <label
+                    key={val}
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                      effectiveMode === val
+                        ? "border-red-600 bg-red-50"
+                        : "border-zinc-200 hover:border-zinc-300"
+                    } ${isNeuvertragUnavailable ? "opacity-90" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name="contractMode"
+                      value={val}
+                      checked={effectiveMode === val}
+                      onChange={() => {
+                        setContractMode(val);
+                        if (val === "neuvertrag") {
+                          setAltHadValorisation(null);
+                          setAltLastValorisationDate("");
+                          const year = Number(contractDate.split("-")[0]);
+                          if (year < 2026) {
+                            setContractDate("2026-01-01");
+                          }
+                        }
+                      }}
+                      className="mt-1 h-4 w-4 text-red-600 focus:ring-red-600"
+                    />
+                    <div className="flex-1">
+                      <span className="block text-sm font-medium text-zinc-900">
+                        {title}
+                        {isNeuvertragUnavailable && (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                            Derzeit nicht verfügbar
+                          </span>
+                        )}
+                      </span>
+                      <span className="block text-xs text-zinc-500">
+                        {desc}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
             </fieldset>
+
+            {!NEUVERTRAG_AVAILABLE && effectiveMode === "neuvertrag" && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Die Berechnung für Neuverträge ist derzeit nicht möglich. Die
+                erste mögliche Mietanpassung ist der 1. April 2027; hierfür
+                fehlen noch die offiziellen VPI-Daten 2026 (voraussichtlich
+                verfügbar ab 2027).
+              </div>
+            )}
 
             {isAltvertrag && (
               <>
@@ -776,8 +870,20 @@ export default function Home() {
               <input
                 id="contractDate"
                 type="date"
+                min={effectiveMode === "neuvertrag" ? NEUVERTRAG_MIN_CONTRACT_DATE : undefined}
                 value={contractDate}
-                onChange={(e) => setContractDate(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  if (
+                    effectiveMode === "neuvertrag" &&
+                    next !== "" &&
+                    next < NEUVERTRAG_MIN_CONTRACT_DATE
+                  ) {
+                    setContractDate(NEUVERTRAG_MIN_CONTRACT_DATE);
+                  } else {
+                    setContractDate(next);
+                  }
+                }}
                 className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
               />
               <p className="mt-1 text-xs text-zinc-500">
@@ -1391,38 +1497,39 @@ export default function Home() {
               </div>
             )}
 
-            {aliquotVisual && aliquotChartData.length > 0 && (
+            {aliquotVisual && (
               <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow sm:p-6">
                 <h2 className="text-lg font-semibold text-zinc-900">
                   Aliquotierung verständlich erklärt
                 </h2>
                 <p className="mt-2 text-sm text-zinc-600">
                   Bei der ersten MieWeG-Anpassung wird nur der Anteil der
-                  vollen Monate im Vorjahr berücksichtigt. Für{" "}
-                  {aliquotVisual.yearLabel} gilt daher:{" "}
-                  {aliquotVisual.baseRate.toFixed(4)}% ×{" "}
-                  {aliquotVisual.fullMonths}/12 ={" "}
-                  {aliquotVisual.aliquotRate.toFixed(4)}%.
+                  vollen Monate im Vorjahr berücksichtigt. Der Startmonat
+                  markiert, ab wann diese Monate gezählt werden; die Anpassung
+                  erfolgt jeweils am 1. April.
                 </p>
-                <div className="mt-3 h-52 w-full min-w-0 sm:h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={aliquotChartData}
-                      margin={{ top: 8, right: 8, left: 0, bottom: 4 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                      <YAxis tickFormatter={(v: number) => `${v.toFixed(2)}%`} width={48} tick={{ fontSize: 11 }} />
-                      <Tooltip
-                        formatter={(value) => {
-                          const numericValue = asNumber(value);
-                          if (numericValue == null) return ["-", "Satz"];
-                          return [`${numericValue.toFixed(4)}%`, "Satz"];
-                        }}
-                      />
-                      <Bar dataKey="percent" fill="#c8102e" radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
+                  <div className="min-w-0 flex-1">
+                    <AliquotierungTimeline
+                      startMonthIndex={12 - aliquotVisual.fullMonths}
+                      months={months}
+                    />
+                  </div>
+                  <div className="shrink-0 sm:w-48">
+                    <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 font-mono text-sm">
+                      <div className="font-medium text-zinc-600">
+                        Berechnungsformel
+                      </div>
+                      <div className="mt-1.5 text-zinc-900">
+                        {aliquotVisual.baseRate.toFixed(4)} % ×{" "}
+                        {aliquotVisual.fullMonths}/12 ={" "}
+                        {aliquotVisual.aliquotRate.toFixed(4)} %
+                      </div>
+                      <p className="mt-2 text-xs text-zinc-500">
+                        Für {aliquotVisual.yearLabel}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

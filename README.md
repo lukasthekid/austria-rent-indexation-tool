@@ -78,17 +78,14 @@ npm run lint     # ESLint
 
 VPI-Daten stammen von **Statistik Austria** und müssen periodisch aktualisiert werden.
 
-### Quelle
-
-- [Statistik Austria – VPI 2020](https://data.statistik.gv.at/web/meta.jsp?dataset=OGD_vpi20_VPI_2020_1)
-
 ### Ablauf
 
-1. VPI Jahresdurchschnittswerte als ODS von Statistik Austria exportieren
-2. `vpi_data.ods` im Projektroot ersetzen
-3. `npm run update-vpi` ausführen → regeneriert `lib/vpi-data-generated.ts`
+`npm run update-vpi` lädt die ODS-Datei von Statistik Austria und erzeugt `lib/vpi-data-generated.ts`.
 
-Erwartete Spalten: `Ø YYYY`, "% zu Vorjahr", VPI 2025, VPI 2020, VPI 2015, etc.
+**Quelle:**  
+[https://www.statistik.at/fileadmin/pages/214/2_Verbraucherpreisindizes_ab_1990.ods](https://www.statistik.at/fileadmin/pages/214/2_Verbraucherpreisindizes_ab_1990.ods)
+
+Struktur: Zeilen mit `Ø YYYY`, Spalte 1 = "% zu Vorjahr", Spalten 2–9 = VPI 2025, 2020, 2015, 2010, 2005, 2000, 1996, 1986.
 
 ### Fallback
 
@@ -110,8 +107,7 @@ Für Jahre ohne offizielle Daten verwendet die App Schätzwerte in `lib/vpi-data
 │   └── vpi-data-generated.ts
 ├── scripts/
 │   └── update-vpi-data.mjs
-├── types/
-└── vpi_data.ods
+└── types/
 ```
 
 ## Haftungsausschluss

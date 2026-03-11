@@ -38,6 +38,10 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   alternates: { canonical: "/" },
+  icons: {
+    icon: "/MietCheck-logo.png",
+    apple: "/MietCheck-logo.png",
+  },
   other: {
     "google-adsense-account": "ca-pub-9500199606572767",
   },
