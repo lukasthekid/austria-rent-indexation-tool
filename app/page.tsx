@@ -406,32 +406,32 @@ export default function Home() {
       : null;
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans">
+    <div className="min-h-screen overflow-x-hidden bg-zinc-50 font-sans">
       {/* Rot-Weiß-Rot Akzent-Banner */}
-      <div className="flex h-1.5 w-full">
+      <div className="flex h-1.5 w-full shrink-0">
         <div className="flex-1 bg-red-600" />
         <div className="flex-1 bg-white" />
         <div className="flex-1 bg-red-600" />
       </div>
-      <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
-        <header className="mb-8 flex flex-col gap-4 border-b border-zinc-200 pb-8">
-          <div className="flex items-center gap-3">
+      <main className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <header className="mb-6 flex flex-col gap-3 border-b border-zinc-200 pb-6 sm:mb-8 sm:gap-4 sm:pb-8">
+          <div className="flex min-w-0 items-start gap-3 sm:items-center">
             <Image
               src="/logo_1.png"
               alt="MietCheck-AT Logo"
               width={48}
               height={48}
-              className="h-12 w-auto"
+              className="h-10 w-10 shrink-0 sm:h-12 sm:w-12"
             />
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+            <h1 className="min-w-0 text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl">
               Ist Ihre Mietzinserhöhung rechtskonform?
             </h1>
           </div>
-          <p className="text-lg text-zinc-600">
+          <p className="text-base text-zinc-600 sm:text-lg">
             Ihre Mietzinserhöhung auf einen Klick geprüft – nach
             österreichischem MieWeG. Kostenlos, nur für Österreich.
           </p>
-          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-600">
+          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-600 sm:text-base">
             <p>
               Das Mieten-Wertsicherungsgesetz (MieWeG) gilt ab 1. Jänner 2026
               und begrenzt die zulässige Wertsicherung von Wohnungsmieten. Der
@@ -441,47 +441,55 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Progress indicator */}
-        <nav className="mb-6 flex items-center gap-1 sm:gap-2 text-sm">
-          {(
-            [
-              ["vertragsart", "Vertragstyp"],
-              ["grunddaten", "Vertragsdaten"],
-              ["details", "Details"],
-              ["ergebnis", "Ergebnis"],
-            ] as const
-          ).map(([s, label], i) => (
-            <span key={s} className="flex items-center gap-1 sm:gap-2">
-              {i > 0 && (
-                <span
-                  className="h-px w-3 sm:w-4 bg-zinc-200 shrink-0"
-                  aria-hidden
-                />
-              )}
-              <button
-                onClick={() => setStep(s)}
-                className={`flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors ${
-                  step === s
-                    ? "bg-red-50 font-semibold text-red-700"
-                    : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
-                }`}
-              >
-                <span
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-medium ${
-                    step === s ? "bg-red-600 text-white" : "bg-zinc-200 text-zinc-600"
+        {/* Progress indicator – horizontal scroll auf Mobile */}
+        <nav
+          className="mb-6 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0"
+          aria-label="Fortschritt"
+        >
+          <div className="flex min-w-max items-center gap-1 py-1 text-sm sm:min-w-0 sm:flex-wrap sm:gap-2">
+            {(
+              [
+                ["vertragsart", "Vertragstyp", "Typ"],
+                ["grunddaten", "Vertragsdaten", "Daten"],
+                ["details", "Details", "Details"],
+                ["ergebnis", "Ergebnis", "Ergebnis"],
+              ] as const
+            ).map(([s, label, labelShort], i) => (
+              <span key={s} className="flex shrink-0 items-center gap-1 sm:gap-2">
+                {i > 0 && (
+                  <span
+                    className="h-px w-2 shrink-0 bg-zinc-200 sm:w-4"
+                    aria-hidden
+                  />
+                )}
+                <button
+                  onClick={() => setStep(s)}
+                  className={`flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 transition-colors sm:min-h-0 sm:rounded-md sm:px-2 sm:py-1 ${
+                    step === s
+                      ? "bg-red-50 font-semibold text-red-700"
+                      : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
                   }`}
                 >
-                  {i + 1}
-                </span>
-                <span>{label}</span>
-              </button>
-            </span>
-          ))}
+                  <span
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium sm:h-5 sm:w-5 ${
+                      step === s ? "bg-red-600 text-white" : "bg-zinc-200 text-zinc-600"
+                    }`}
+                  >
+                    {i + 1}
+                  </span>
+                  <span>
+                    <span className="sm:hidden">{labelShort}</span>
+                    <span className="hidden sm:inline">{label}</span>
+                  </span>
+                </button>
+              </span>
+            ))}
+          </div>
         </nav>
 
         {/* Step 1: Vertragstyp */}
         {step === "vertragsart" && (
-          <section className="space-y-7 rounded-xl border border-zinc-100 bg-white p-6 shadow">
+          <section className="space-y-6 rounded-xl border border-zinc-100 bg-white p-4 shadow sm:space-y-7 sm:p-6">
             <h2 className="text-lg font-semibold text-zinc-900">
               Schritt 1: Ihr Vertragstyp
             </h2>
@@ -725,17 +733,17 @@ export default function Home() {
               </>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
               <button
                 onClick={() => setStep("grunddaten")}
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+                className="min-h-[44px] rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:py-2.5"
               >
                 Zurück
               </button>
               <button
                 onClick={() => setStep("grunddaten")}
                 disabled={!canProceedFromStep1}
-                className="flex-1 rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-2.5"
               >
                 Weiter
               </button>
@@ -745,7 +753,7 @@ export default function Home() {
 
         {/* Step 2: Vertragsdaten */}
         {step === "grunddaten" && (
-          <section className="space-y-7 rounded-xl border border-zinc-100 bg-white p-6 shadow">
+          <section className="space-y-6 rounded-xl border border-zinc-100 bg-white p-4 shadow sm:space-y-7 sm:p-6">
             <h2 className="text-lg font-semibold text-zinc-900">
               Schritt 2: Vertragsdaten
             </h2>
@@ -826,17 +834,17 @@ export default function Home() {
                 Geschäftsräume, WGG (außer § 13 Abs 4).
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
               <button
                 onClick={() => setStep("vertragsart")}
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+                className="min-h-[44px] rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:py-2.5"
               >
                 Zurück
               </button>
               <button
                 onClick={() => setStep("details")}
                 disabled={!canProceedFromStep2}
-                className="flex-1 rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-2.5"
               >
                 Weiter
               </button>
@@ -846,7 +854,7 @@ export default function Home() {
 
         {/* Step 3: Details */}
         {step === "details" && (
-          <section className="space-y-7 rounded-xl border border-zinc-100 bg-white p-6 shadow">
+          <section className="space-y-6 rounded-xl border border-zinc-100 bg-white p-4 shadow sm:space-y-7 sm:p-6">
             <h2 className="text-lg font-semibold text-zinc-900">
               Schritt 3: Details
             </h2>
@@ -1196,16 +1204,16 @@ export default function Home() {
                 </div>
               )}
 
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
               <button
                 onClick={() => setStep("grunddaten")}
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+                className="min-h-[44px] rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:py-2.5"
               >
                 Zurück
               </button>
               <button
                 onClick={() => setStep("ergebnis")}
-                className="flex-1 rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 "
+                className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800 sm:min-h-0 sm:py-2.5"
               >
                 Berechnen
               </button>
@@ -1218,12 +1226,12 @@ export default function Home() {
           <section className="space-y-6">
             {/* Neuvertrag / Unknown result */}
             {showResult && (
-              <div className="rounded-xl border border-zinc-100 bg-white p-6 shadow">
+              <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow sm:p-6">
                 <h2 className="text-lg font-semibold text-zinc-900">
                   Ergebnis – MieWeG-Begrenzung
                 </h2>
                 <div className="mt-4 space-y-2">
-                  <p className="text-2xl font-bold text-zinc-900">
+                  <p className="text-xl font-bold leading-tight text-zinc-900 sm:text-2xl">
                     Max. zulässige Miete ab{" "}
                     {apartmentType === "preisgeschützt" ? "1.5" : "1.4"}.
                     {valorisationYear}: {formatEur(showResult.newRentCents)}
@@ -1256,19 +1264,20 @@ export default function Home() {
                       Die Kurve zeigt, wie sich die zulässige Miete von Jahr zu
                       Jahr unter den MieWeG-Grenzen entwickelt.
                     </p>
-                    <div className="mt-3 h-72 w-full">
+                    <div className="mt-3 h-56 w-full min-w-0 sm:h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                           data={miewegTimelineData}
-                          margin={{ top: 12, right: 24, left: 4, bottom: 10 }}
+                          margin={{ top: 8, right: 8, left: 4, bottom: 4 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="yearLabel" />
+                          <XAxis dataKey="yearLabel" tick={{ fontSize: 11 }} />
                           <YAxis
                             tickFormatter={(value: number) =>
                               formatEur(Math.round(value * 100))
                             }
-                            width={92}
+                            width={64}
+                            tick={{ fontSize: 11 }}
                           />
                           <Tooltip
                             formatter={(value) => {
@@ -1299,7 +1308,7 @@ export default function Home() {
 
             {/* Parallelrechnung result */}
             {showParallel && showParallel.steps.length > 0 && (
-              <div className="rounded-xl border border-zinc-100 bg-white p-6 shadow">
+              <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow sm:p-6">
                 <h2 className="text-lg font-semibold text-zinc-900">
                   Ergebnis – Parallelrechnung
                 </h2>
@@ -1309,7 +1318,7 @@ export default function Home() {
                 </p>
 
                 <div className="mt-4 space-y-2">
-                  <p className="text-2xl font-bold text-zinc-900">
+                  <p className="text-xl font-bold leading-tight text-zinc-900 sm:text-2xl">
                     Max. zulässige Miete ab{" "}
                     {apartmentType === "preisgeschützt" ? "1.5" : "1.4"}.
                     {altTargetYear}:{" "}
@@ -1321,9 +1330,9 @@ export default function Home() {
                   </p>
                 </div>
 
-                {/* Comparison table */}
-                <div className="mt-6 overflow-x-auto">
-                  <table className="w-full text-left text-sm">
+                {/* Comparison table – horizontal scroll auf Mobile */}
+                <div className="mt-6 overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                  <table className="min-w-[360px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-zinc-200 text-xs font-medium uppercase tracking-wider text-zinc-500">
                         <th className="pb-2 pr-4">1. April</th>
@@ -1383,7 +1392,7 @@ export default function Home() {
             )}
 
             {aliquotVisual && aliquotChartData.length > 0 && (
-              <div className="rounded-xl border border-zinc-100 bg-white p-6 shadow">
+              <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow sm:p-6">
                 <h2 className="text-lg font-semibold text-zinc-900">
                   Aliquotierung verständlich erklärt
                 </h2>
@@ -1395,15 +1404,15 @@ export default function Home() {
                   {aliquotVisual.fullMonths}/12 ={" "}
                   {aliquotVisual.aliquotRate.toFixed(4)}%.
                 </p>
-                <div className="mt-3 h-64 w-full">
+                <div className="mt-3 h-52 w-full min-w-0 sm:h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={aliquotChartData}
-                      margin={{ top: 12, right: 24, left: 4, bottom: 8 }}
+                      margin={{ top: 8, right: 8, left: 0, bottom: 4 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="label" />
-                      <YAxis tickFormatter={(v: number) => `${v.toFixed(2)}%`} />
+                      <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                      <YAxis tickFormatter={(v: number) => `${v.toFixed(2)}%`} width={48} tick={{ fontSize: 11 }} />
                       <Tooltip
                         formatter={(value) => {
                           const numericValue = asNumber(value);
@@ -1428,7 +1437,7 @@ export default function Home() {
 
             {/* Proposed rent check */}
             {finalRent != null && (
-              <div className="rounded-xl border border-zinc-100 bg-white p-6 shadow">
+              <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow sm:p-6">
                 <label
                   htmlFor="proposedRent"
                   className="block text-sm font-medium text-zinc-700"
@@ -1443,7 +1452,7 @@ export default function Home() {
                   placeholder="z.B. 830"
                   value={proposedRent}
                   onChange={(e) => setProposedRent(e.target.value)}
-                  className="mt-1 block w-full max-w-xs rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                  className="mt-1 block w-full max-w-xs min-h-[44px] rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-base text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600 sm:min-h-0 sm:py-2"
                 />
                 {proposedValid && (
                   <p className="mt-2 text-sm font-medium text-green-600">
@@ -1462,7 +1471,7 @@ export default function Home() {
 
             <button
               onClick={() => setStep("details")}
-              className="w-full rounded-md border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+              className="w-full min-h-[44px] rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:py-2.5"
             >
               Zurück zu Details
             </button>
@@ -1471,18 +1480,18 @@ export default function Home() {
 
         {/* FAQ für SEO – Accordion mit details/summary + Tailwind */}
         <section
-          className="mt-12 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"
+          className="mt-10 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm sm:mt-12"
           aria-labelledby="faq-heading"
         >
           <h2
             id="faq-heading"
-            className="border-b border-zinc-200 bg-zinc-50 px-6 py-4 text-lg font-semibold text-zinc-900"
+            className="border-b border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-semibold text-zinc-900 sm:px-6 sm:py-4 sm:text-lg"
           >
             Häufige Fragen zum MieWeG
           </h2>
           <div className="divide-y divide-zinc-200">
             <details className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
                 Ab wann gilt das neue MieWeG?
                 <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1490,7 +1499,7 @@ export default function Home() {
                   </svg>
                 </span>
               </summary>
-              <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 text-sm text-zinc-600">
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
                 Das Mieten-Wertsicherungsgesetz (MieWeG) gilt ab 1. Jänner 2026
                 und betrifft sowohl neu abgeschlossene Mietverträge als auch
                 bestehende Altverträge. Die erste mögliche Anpassung nach MieWeG
@@ -1498,7 +1507,7 @@ export default function Home() {
               </div>
             </details>
             <details className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
                 Was ist die maximale Mietzinserhöhung?
                 <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1506,7 +1515,7 @@ export default function Home() {
                   </svg>
                 </span>
               </summary>
-              <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 text-sm text-zinc-600">
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
                 Liegt die Inflation unter 3 %, gilt die volle VPI-Änderung. Bei
                 Inflation über 3 % wird der darüberliegende Teil nur zur Hälfte
                 berücksichtigt (z.B. bei 6 % Inflation ≈ 4,5 % zulässige
@@ -1515,7 +1524,7 @@ export default function Home() {
               </div>
             </details>
             <details className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
                 Gilt das MieWeG auch für meinen Altvertrag?
                 <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1523,7 +1532,7 @@ export default function Home() {
                   </svg>
                 </span>
               </summary>
-              <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 text-sm text-zinc-600">
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
                 Ja. Das MieWeG gilt für alle Wohnungsmietverträge – unabhängig
                 vom Abschlussdatum. Bei Altverträgen mit Wertsicherungsklausel
                 wird die Parallelrechnung angewendet: Maßgeblich ist der
@@ -1531,7 +1540,7 @@ export default function Home() {
               </div>
             </details>
             <details className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
                 Wann darf die Miete angepasst werden?
                 <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1539,14 +1548,14 @@ export default function Home() {
                   </svg>
                 </span>
               </summary>
-              <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 text-sm text-zinc-600">
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
                 Wertsicherungen sind nur einmal jährlich zum 1. April zulässig –
                 unabhängig von abweichenden Klauseln in Ihrem Vertrag. Dies gilt
                 ab 2026 für alle von MieWeG erfassten Mietverträge.
               </div>
             </details>
             <details className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
                 Wie prüfe ich meine Mietzinserhöhung?
                 <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1554,7 +1563,7 @@ export default function Home() {
                   </svg>
                 </span>
               </summary>
-              <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 text-sm text-zinc-600">
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
                 Geben Sie Ihre aktuelle Miete, Vertragsdaten und ggf. die
                 letzte Indexierung in den Rechner ein. Er zeigt die maximal
                 zulässige Miete. Ist die vom Vermieter geforderte Erhöhung
@@ -1565,7 +1574,7 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="mt-12 space-y-4">
+        <footer className="mt-10 space-y-4 sm:mt-12">
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-600">
             <p className="font-medium text-zinc-700">Haftungsausschluss</p>
             <p className="mt-2">
