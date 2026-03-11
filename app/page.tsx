@@ -36,15 +36,20 @@ type ContractMode = "neuvertrag" | "altvertrag";
 type AltvertragClause = ClauseType | "unknown";
 
 export default function Home() {
-  const [step, setStep] = useState<WizardStep>("grunddaten");
+  const [step, setStep] = useState<WizardStep>("vertragsart");
 
-  // Step 1: Grunddaten
+  // Step 1: Vertragstyp
+  const [contractMode, setContractMode] = useState<ContractMode | null>(null);
+  const [altHadValorisation, setAltHadValorisation] = useState<boolean | null>(
+    null
+  );
+  const [altLastValorisationDate, setAltLastValorisationDate] =
+    useState<string>(""); // "YYYY-MM-01" für Monat der Indexzahl
+
+  // Step 2: Vertragsdaten
   const [currentRent, setCurrentRent] = useState<string>("800");
   const [contractDate, setContractDate] = useState<string>("2024-06-01");
   const [apartmentType, setApartmentType] = useState<ApartmentType>("free");
-
-  // Step 2: Vertragsart
-  const [contractMode, setContractMode] = useState<ContractMode | null>(null);
   const [altvertragClause, setAltvertragClause] =
     useState<AltvertragClause>("vpiAnnual");
 
@@ -67,16 +72,20 @@ export default function Home() {
   const [altTargetYear, setAltTargetYear] = useState<number>(2028);
   const [proposedRent, setProposedRent] = useState<string>("");
 
-  const isAltvertrag = useMemo(() => {
+  const autoContractMode: ContractMode = useMemo(() => {
     const year = Number(contractDate.split("-")[0]);
-    return year < 2026;
+    return year < 2026 ? "altvertrag" : "neuvertrag";
   }, [contractDate]);
 
-  const autoContractMode: ContractMode = isAltvertrag
-    ? "altvertrag"
-    : "neuvertrag";
-
   const effectiveMode = contractMode ?? autoContractMode;
+  const isAltvertrag = effectiveMode === "altvertrag";
+
+  const canProceedFromStep1 =
+    effectiveMode != null &&
+    (!isAltvertrag ||
+      (altHadValorisation !== null &&
+        (altHadValorisation === false ||
+          altLastValorisationDate.trim() !== "")));
 
   // Neuvertrag result
   const inflationYear = valorisationYear - 1;
@@ -130,6 +139,17 @@ export default function Home() {
     const cDate = new Date(y, (m ?? 1) - 1, d ?? 1);
     if (isNaN(cDate.getTime())) return null;
 
+    let lastValorisationMonth: Date | undefined;
+    if (
+      altHadValorisation === true &&
+      altLastValorisationDate.trim() !== ""
+    ) {
+      const [ly, lm, ld] = altLastValorisationDate.split("-").map(Number);
+      lastValorisationMonth = new Date(ly, (lm ?? 1) - 1, ld ?? 1);
+      if (isNaN(lastValorisationMonth.getTime()))
+        lastValorisationMonth = undefined;
+    }
+
     let clauseParams: ClauseParams;
     if (altvertragClause === "vpiAnnual") {
       clauseParams = { adjustmentMonth, vpiBase };
@@ -159,6 +179,7 @@ export default function Home() {
       clauseType: altvertragClause as ClauseType,
       clauseParams,
       targetYear: altTargetYear,
+      lastValorisationMonth,
     });
   }, [
     effectiveMode,
@@ -174,6 +195,8 @@ export default function Home() {
     staffelValue,
     staffelMonth,
     altTargetYear,
+    altHadValorisation,
+    altLastValorisationDate,
   ]);
 
   const firstIndexationDate = useMemo(() => {
@@ -182,7 +205,7 @@ export default function Home() {
     return isNaN(d2.getTime()) ? null : getFirstIndexationDate(d2);
   }, [contractDate]);
 
-  const canGoToStep2 =
+  const canProceedFromStep2 =
     currentRent !== "" &&
     parseFloat(currentRent) > 0 &&
     contractDate.trim() !== "";
@@ -257,8 +280,8 @@ export default function Home() {
         <nav className="mb-6 flex items-center gap-1 sm:gap-2 text-sm">
           {(
             [
-              ["grunddaten", "Grunddaten"],
-              ["vertragsart", "Vertragsart"],
+              ["vertragsart", "Vertragstyp"],
+              ["grunddaten", "Vertragsdaten"],
               ["details", "Details"],
               ["ergebnis", "Ergebnis"],
             ] as const
@@ -291,12 +314,304 @@ export default function Home() {
           ))}
         </nav>
 
-        {/* Step 1: Grunddaten */}
+        {/* Step 1: Vertragstyp */}
+        {step === "vertragsart" && (
+          <section className="space-y-7 rounded-xl border border-zinc-100 bg-white p-6 shadow">
+            <h2 className="text-lg font-semibold text-zinc-900">
+              Schritt 1: Ihr Vertragstyp
+            </h2>
+
+            <p className="text-sm text-zinc-600">
+              Neuverträge (ab 1.1.2026) und Altverträge (vor 1.1.2026) werden
+              unterschiedlich berechnet. Wir führen Sie Schritt für Schritt
+              durch.
+            </p>
+
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-medium text-zinc-700">
+                Wann wurde Ihr Mietvertrag unterzeichnet?
+              </legend>
+              {(
+                [
+                  [
+                    "altvertrag",
+                    "Vor dem 1. Januar 2026 (Altvertrag)",
+                    "Verträge mit älteren Wertsicherungsklauseln",
+                  ],
+                  [
+                    "neuvertrag",
+                    "Am oder nach dem 1. Januar 2026 (Neuvertrag)",
+                    "Oder Vertrag verweist auf MieWeG § 1 Abs 2",
+                  ],
+                ] as const
+              ).map(([val, title, desc]) => (
+                <label
+                  key={val}
+                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                    effectiveMode === val
+                      ? "border-orange-500 bg-orange-50"
+                      : "border-zinc-200 hover:border-zinc-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="contractMode"
+                    value={val}
+                    checked={effectiveMode === val}
+                    onChange={() => {
+                      setContractMode(val);
+                      if (val === "neuvertrag") {
+                        setAltHadValorisation(null);
+                        setAltLastValorisationDate("");
+                      }
+                    }}
+                    className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500"
+                  />
+                  <div>
+                    <span className="block text-sm font-medium text-zinc-900">
+                      {title}
+                    </span>
+                    <span className="block text-xs text-zinc-500">
+                      {desc}
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </fieldset>
+
+            {isAltvertrag && (
+              <>
+                <fieldset className="space-y-3">
+                  <legend className="text-sm font-medium text-zinc-700">
+                    Wurde Ihre Miete seit Unterzeichnung bereits erhöht?
+                  </legend>
+                  <p className="text-xs text-zinc-500">
+                    Hat Ihr Vermieter Ihre Miete seit Vertragsunterzeichnung
+                    schon angehoben?
+                  </p>
+                  <label
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                      altHadValorisation === false
+                        ? "border-orange-500 bg-orange-50"
+                        : "border-zinc-200 hover:border-zinc-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="altHadValorisation"
+                      checked={altHadValorisation === false}
+                      onChange={() => {
+                        setAltHadValorisation(false);
+                        setAltLastValorisationDate("");
+                      }}
+                      className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500"
+                    />
+                    <span className="text-sm font-medium text-zinc-900">
+                      Nein, noch keine Anpassung
+                    </span>
+                  </label>
+                  <label
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                      altHadValorisation === true
+                        ? "border-orange-500 bg-orange-50"
+                        : "border-zinc-200 hover:border-zinc-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="altHadValorisation"
+                      checked={altHadValorisation === true}
+                      onChange={() => setAltHadValorisation(true)}
+                      className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500"
+                    />
+                    <span className="text-sm font-medium text-zinc-900">
+                      Ja
+                    </span>
+                  </label>
+                </fieldset>
+
+                {altHadValorisation === true && (
+                  <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                    <label className="block text-sm font-medium text-zinc-700">
+                      Monat der letzten Indexierung
+                    </label>
+                    <p className="text-xs text-zinc-600">
+                      Der Monat steht oft auf dem Mieterhöhungsschreiben, z.B.
+                      als „VPI Februar 2025“. Maßgeblich ist der Monat der
+                      Indexzahl, nicht der Tag der Anzeige.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      <select
+                        value={
+                          altLastValorisationDate
+                            ? Number(altLastValorisationDate.split("-")[1]) - 1
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const m = e.target.value;
+                          if (m === "") {
+                            setAltLastValorisationDate("");
+                            return;
+                          }
+                          const mi = Number(m);
+                          const y = altLastValorisationDate
+                            ? altLastValorisationDate.split("-")[0]
+                            : "2024";
+                          setAltLastValorisationDate(
+                            `${y}-${String(mi + 1).padStart(2, "0")}-01`
+                          );
+                        }}
+                        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                      >
+                        <option value="">Monat wählen</option>
+                        {months.map((mo, i) => (
+                          <option key={i} value={i}>
+                            {mo}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={
+                          altLastValorisationDate
+                            ? altLastValorisationDate.split("-")[0]
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const y = e.target.value;
+                          const m = altLastValorisationDate
+                            ? altLastValorisationDate.split("-")[1]
+                            : "01";
+                          setAltLastValorisationDate(
+                            y ? `${y}-${m}-01` : ""
+                          );
+                        }}
+                        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                      >
+                        <option value="">Jahr wählen</option>
+                        {[2020, 2021, 2022, 2023, 2024, 2025].map((yr) => (
+                          <option key={yr} value={yr}>
+                            {yr}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <fieldset className="space-y-3">
+                  <legend className="text-sm font-medium text-zinc-700">
+                    Wie wird die Miete in Ihrem Vertrag angepasst?
+                  </legend>
+                  <p className="text-xs text-zinc-500">
+                    Bitte schauen Sie in Ihren Mietvertrag – oft steht dies in
+                    der Wertsicherungsklausel.
+                  </p>
+                  {(
+                    [
+                      [
+                        "vpiAnnual",
+                        "VPI-basiert mit jährlicher Anpassung",
+                        "Miete wird jährlich an einem festen Datum anhand des VPI angepasst",
+                      ],
+                      [
+                        "vpiThreshold",
+                        "VPI-basiert mit Schwellenwert",
+                        "Anpassung erst wenn VPI um z.B. 5% gestiegen ist",
+                      ],
+                      [
+                        "staffel",
+                        "Staffelmiete",
+                        "Fixe prozentuale oder betragsmäßige Erhöhung pro Jahr",
+                      ],
+                      [
+                        "unknown",
+                        "Ich weiß es nicht / Nur MieWeG-Grenze",
+                        "Berechnet nur die maximal zulässige Miete",
+                      ],
+                    ] as const
+                  ).map(([val, title, desc]) => (
+                    <label
+                      key={val}
+                      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                        altvertragClause === val
+                          ? "border-orange-500 bg-orange-50"
+                          : "border-zinc-200 hover:border-zinc-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="altvertragClause"
+                        value={val}
+                        checked={altvertragClause === val}
+                        onChange={() => setAltvertragClause(val)}
+                        className="mt-0.5 h-4 w-4 text-orange-600 focus:ring-orange-500"
+                      />
+                      <div>
+                        <span className="block text-sm font-medium text-zinc-900">
+                          {title}
+                        </span>
+                        <span className="block text-xs text-zinc-500">
+                          {desc}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </fieldset>
+              </>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep("grunddaten")}
+                className="rounded-md border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+              >
+                Zurück
+              </button>
+              <button
+                onClick={() => setStep("grunddaten")}
+                disabled={!canProceedFromStep1}
+                className="flex-1 rounded-md bg-orange-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Weiter
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Step 2: Vertragsdaten */}
         {step === "grunddaten" && (
           <section className="space-y-7 rounded-xl border border-zinc-100 bg-white p-6 shadow">
             <h2 className="text-lg font-semibold text-zinc-900">
-              Schritt 1: Grunddaten
+              Schritt 2: Vertragsdaten
             </h2>
+
+            {isAltvertrag && altHadValorisation === true && (
+              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+                Für die Berechnung verwenden wir den Monat der letzten
+                Indexierung als Referenzdatum (§ 4 Abs 2 MieWeG), nicht das
+                Unterzeichnungsdatum.
+              </div>
+            )}
+
+            <div>
+              <label
+                htmlFor="contractDate"
+                className="block text-sm font-medium text-zinc-700"
+              >
+                Vertragsunterzeichnung
+              </label>
+              <input
+                id="contractDate"
+                type="date"
+                value={contractDate}
+                onChange={(e) => setContractDate(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              />
+              <p className="mt-1 text-xs text-zinc-500">
+                Datum, an dem Sie den Mietvertrag unterschrieben haben. Nicht
+                das Einzugsdatum.
+              </p>
+            </div>
             <div>
               <label
                 htmlFor="rent"
@@ -313,27 +628,9 @@ export default function Home() {
                 onChange={(e) => setCurrentRent(e.target.value)}
                 className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
-            </div>
-            <div>
-              <label
-                htmlFor="contractDate"
-                className="block text-sm font-medium text-zinc-700"
-              >
-                Vertragsabschluss
-              </label>
-              <input
-                id="contractDate"
-                type="date"
-                value={contractDate}
-                onChange={(e) => {
-                  setContractDate(e.target.value);
-                  setContractMode(null);
-                }}
-                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
               <p className="mt-1 text-xs text-zinc-500">
-                Datum der Unterzeichnung (nicht Vertragsbeginn). Maßgeblich für
-                Aliquotierung (§ 1 Abs 2 Z 2 MieWeG).
+                Die Miete, die Sie derzeit zahlen (inkl. letzter Anpassung falls
+                bereits erhöht).
               </p>
             </div>
             <div>
@@ -352,157 +649,29 @@ export default function Home() {
                 className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               >
                 <option value="free">
-                  Freier Mietzins (Teilanwendung MRG, RBG 1971)
+                  Freier Mietzins – z.B. Neubau, teilanwendungsbereich MRG
                 </option>
                 <option value="preisgeschützt">
-                  Preisgeschützt (Vollanwendung MRG)
+                  Preisgeschützt – Richtwert- oder Kategoriemiete (Vollanwendung
+                  MRG)
                 </option>
               </select>
               <p className="mt-1 text-xs text-zinc-500">
-                Nicht erfasst vom MieWeG: Vollausnahmen vom MRG (z.B.
-                Freizeit-Zweitwohnungen, Ein-/Zweiobjekthäuser),
-                Geschäftsräume, sowie WGG-Verträge (außer § 13 Abs 4 WGG).
+                Nicht erfasst: Freizeitwohnungen, Ein-/Zweiobjekthäuser,
+                Geschäftsräume, WGG (außer § 13 Abs 4).
               </p>
             </div>
-            <button
-              onClick={() => setStep("vertragsart")}
-              disabled={!canGoToStep2}
-              className="w-full rounded-md bg-orange-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 "
-            >
-              Weiter
-            </button>
-          </section>
-        )}
-
-        {/* Step 2: Vertragsart */}
-        {step === "vertragsart" && (
-          <section className="space-y-7 rounded-xl border border-zinc-100 bg-white p-6 shadow">
-            <h2 className="text-lg font-semibold text-zinc-900">
-              Schritt 2: Vertragsart
-            </h2>
-
-            {isAltvertrag && (
-              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 ">
-                Ihr Vertrag wurde vor dem 1.1.2026 abgeschlossen (Altvertrag).
-                Bei abweichenden Wertsicherungsklauseln ist eine
-                Parallelrechnung erforderlich.
-              </div>
-            )}
-
-            <fieldset className="space-y-3">
-              <legend className="text-sm font-medium text-zinc-700">
-                Vertragstyp
-              </legend>
-              {(
-                [
-                  [
-                    "neuvertrag",
-                    "Neuvertrag / Wertsicherung gemäß MieWeG",
-                    "Ab 1.1.2026 oder Vertrag verweist auf MieWeG § 1 Abs 2",
-                  ],
-                  [
-                    "altvertrag",
-                    "Altvertrag mit eigener Wertsicherungsklausel",
-                    "Vor 1.1.2026 mit VPI-Klausel, Schwellenwert oder Staffelmiete",
-                  ],
-                ] as const
-              ).map(([val, title, desc]) => (
-                <label
-                  key={val}
-                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-                    effectiveMode === val
-                      ? "border-orange-500 bg-orange-50"
-                      : "border-zinc-200 hover:border-zinc-300"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="contractMode"
-                    value={val}
-                    checked={effectiveMode === val}
-                    onChange={() => setContractMode(val)}
-                    className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500"
-                  />
-                  <div>
-                    <span className="block text-sm font-medium text-zinc-900">
-                      {title}
-                    </span>
-                    <span className="block text-xs text-zinc-500">
-                      {desc}
-                    </span>
-                  </div>
-                </label>
-              ))}
-            </fieldset>
-
-            {effectiveMode === "altvertrag" && (
-              <fieldset className="space-y-3">
-                <legend className="text-sm font-medium text-zinc-700">
-                  Art der Wertsicherungsklausel
-                </legend>
-                {(
-                  [
-                    [
-                      "vpiAnnual",
-                      "VPI-basiert mit jährlicher Anpassung",
-                      "Miete wird jährlich an einem festen Datum anhand des VPI angepasst",
-                    ],
-                    [
-                      "vpiThreshold",
-                      "VPI-basiert mit Schwellenwert",
-                      "Anpassung erst wenn VPI um z.B. 5% gestiegen ist",
-                    ],
-                    [
-                      "staffel",
-                      "Staffelmiete",
-                      "Fixe prozentuale oder betragsmäßige Erhöhung pro Jahr",
-                    ],
-                    [
-                      "unknown",
-                      "Ich weiß es nicht / Nur MieWeG-Grenze",
-                      "Berechnet nur die MieWeG-Begrenzungskurve",
-                    ],
-                  ] as const
-                ).map(([val, title, desc]) => (
-                  <label
-                    key={val}
-                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
-                      altvertragClause === val
-                        ? "border-orange-500 bg-orange-50"
-                        : "border-zinc-200 hover:border-zinc-300"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="altvertragClause"
-                      value={val}
-                      checked={altvertragClause === val}
-                      onChange={() => setAltvertragClause(val)}
-                      className="mt-0.5 h-4 w-4 text-orange-600 focus:ring-orange-500"
-                    />
-                    <div>
-                      <span className="block text-sm font-medium text-zinc-900">
-                        {title}
-                      </span>
-                      <span className="block text-xs text-zinc-500">
-                        {desc}
-                      </span>
-                    </div>
-                  </label>
-                ))}
-              </fieldset>
-            )}
-
             <div className="flex gap-3">
               <button
-                onClick={() => setStep("grunddaten")}
+                onClick={() => setStep("vertragsart")}
                 className="rounded-md border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
               >
                 Zurück
               </button>
               <button
                 onClick={() => setStep("details")}
-                className="flex-1 rounded-md bg-orange-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 "
+                disabled={!canProceedFromStep2}
+                className="flex-1 rounded-md bg-orange-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Weiter
               </button>
@@ -526,7 +695,7 @@ export default function Home() {
                     htmlFor="valorisationYear"
                     className="block text-sm font-medium text-zinc-700"
                   >
-                    Valorisierung zum 1. April
+                    Für welches Jahr soll die maximale Miete berechnet werden?
                   </label>
                   <select
                     id="valorisationYear"
@@ -538,14 +707,14 @@ export default function Home() {
                   >
                     {VALORISATION_YEARS.map((y) => (
                       <option key={y} value={y}>
-                        {y}
+                        1. April {y}
                       </option>
                     ))}
                   </select>
                   {firstIndexationDate && (
                     <p className="mt-1 text-xs text-zinc-500">
-                      Erste Valorisierung: 1.4.
-                      {firstIndexationDate.getFullYear()}
+                      Mietanpassungen sind nur ab dem 1.4.
+                      {firstIndexationDate.getFullYear()} zulässig.
                     </p>
                   )}
                 </div>
@@ -567,6 +736,10 @@ export default function Home() {
                     onChange={(e) => setCustomVpi(e.target.value)}
                     className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                   />
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Nur anpassen, wenn Sie andere Inflationsdaten verwenden
+                    möchten. Standardwert aus Statistik Austria.
+                  </p>
                 </div>
                 <div>
                   <label
@@ -583,8 +756,9 @@ export default function Home() {
                     className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                   />
                   <p className="mt-1 text-xs text-zinc-500">
-                    Monat der Indexzahl, die die letzte Mietanpassung ausgelöst
-                    hat.
+                    Wenn Ihre Miete bereits angehoben wurde: Monat der
+                    Indexzahl, die die letzte Anpassung ausgelöst hat (steht oft
+                    auf der Mieterhöhungsanzeige).
                   </p>
                   {lastValorisationDate.trim() && (
                     <label className="mt-3 flex items-start gap-2 text-sm text-zinc-700">
@@ -612,7 +786,7 @@ export default function Home() {
                       htmlFor="altTargetYear"
                       className="block text-sm font-medium text-zinc-700"
                     >
-                      Berechnung bis 1. April
+                      Für welches Jahr soll die maximale Miete berechnet werden?
                     </label>
                     <select
                       id="altTargetYear"
@@ -624,10 +798,13 @@ export default function Home() {
                     >
                       {VALORISATION_YEARS.map((y) => (
                         <option key={y} value={y}>
-                          {y}
+                          1. April {y}
                         </option>
                       ))}
                     </select>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Das Jahr, für das Sie die zulässige Miete prüfen möchten.
+                    </p>
                   </div>
 
                   {(altvertragClause === "vpiAnnual" ||
@@ -850,7 +1027,7 @@ export default function Home() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => setStep("vertragsart")}
+                onClick={() => setStep("grunddaten")}
                 className="rounded-md border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
               >
                 Zurück
@@ -1037,17 +1214,30 @@ export default function Home() {
           </section>
         )}
 
-        <footer className="mt-12 space-y-2 text-center text-sm text-zinc-500">
-          <p>
-            Dieses Tool dient der Information und ersetzt keine rechtliche
-            Beratung. Basis: MieWeG (BGBl. I 2025), 5. MILG, in Kraft ab
-            1.1.2026.
-          </p>
-          <p>
-            Nicht erfasst: Mietverträge nach dem WGG (außer § 13 Abs 4),
-            Geschäftsraummieten, sowie Voll-Ausnahmen vom MRG. Bei negativer
-            VPI-Entwicklung (Deflation) bleibt die Miete unverändert.
-          </p>
+        <footer className="mt-12 space-y-4">
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-600">
+            <p className="font-medium text-zinc-700">Haftungsausschluss</p>
+            <p className="mt-2">
+              Die Berechnungen dieses Rechners dienen ausschließlich der
+              Vereinfachung und Orientierung. Es wird keine Garantie für die
+              rechtliche Richtigkeit, Vollständigkeit oder Aktualität der
+              Angaben übernommen. Insbesondere ersetzen die Ergebnisse keine
+              individuelle Prüfung durch eine sachkundige Person.
+              Nutzer:innen sollten die Berechnungen stets selbst überprüfen oder
+              rechtlichen Rat einholen, bevor sie Entscheidungen treffen oder
+              Zahlungen anpassen.
+            </p>
+          </div>
+          <div className="text-center text-xs text-zinc-500">
+            <p>
+              Basis: MieWeG (BGBl. I 2025), 5. MILG, in Kraft ab 1.1.2026.
+            </p>
+            <p className="mt-1">
+              Nicht erfasst: Mietverträge nach dem WGG (außer § 13 Abs 4),
+              Geschäftsraummieten, Voll-Ausnahmen vom MRG. Bei negativer
+              VPI-Entwicklung bleibt die Miete unverändert.
+            </p>
+          </div>
         </footer>
       </main>
     </div>
