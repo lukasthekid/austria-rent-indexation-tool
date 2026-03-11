@@ -4,13 +4,17 @@ import Image from "next/image";
 import { useState, useMemo } from "react";
 import {
   calculateMieWeGRent,
+  computeRateForYear,
+  DEFAULT_VPI_FALLBACK,
   getFirstIndexationDate,
+  getFullMonthsInPriorYear,
   type ApartmentType,
 } from "@/lib/mieweg";
 import {
   getVpiChangeForYear,
   getVpiAverageForYear,
   getDefaultVpiBase,
+  VPI_ALL_BASES,
   VPI_BASE_NAMES,
   type VpiBaseName,
 } from "@/lib/vpi-data";
@@ -19,8 +23,36 @@ import {
   type ParallelrechnungStep,
 } from "@/lib/parallelrechnung";
 import type { ClauseType, ClauseParams } from "@/lib/vertragskurve";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
-const VALORISATION_YEARS = [2026, 2027, 2028, 2029, 2030];
+const CURRENT_YEAR = new Date().getFullYear();
+const MIN_VALORISATION_YEAR = 2026;
+const OFFICIAL_VPI_2020_YEARS = Object.keys(VPI_ALL_BASES["VPI 2020"] ?? {})
+  .map(Number)
+  .filter((year) => Number.isFinite(year));
+const MAX_OFFICIAL_INFLATION_YEAR =
+  OFFICIAL_VPI_2020_YEARS.length > 0
+    ? Math.max(...OFFICIAL_VPI_2020_YEARS)
+    : MIN_VALORISATION_YEAR - 1;
+const MAX_RELIABLE_VALORISATION_YEAR = Math.max(
+  MIN_VALORISATION_YEAR,
+  Math.min(CURRENT_YEAR, MAX_OFFICIAL_INFLATION_YEAR + 1)
+);
+const VALORISATION_YEARS = Array.from(
+  { length: MAX_RELIABLE_VALORISATION_YEAR - MIN_VALORISATION_YEAR + 1 },
+  (_, i) => MIN_VALORISATION_YEAR + i
+);
 
 function formatEur(cents: number): string {
   return new Intl.NumberFormat("de-AT", {
@@ -29,6 +61,23 @@ function formatEur(cents: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(cents / 100);
+}
+
+function parseDateInput(value: string): Date | null {
+  if (!value.trim()) return null;
+  const [y, m, d] = value.split("-").map(Number);
+  const date = new Date(y, (m ?? 1) - 1, d ?? 1);
+  return isNaN(date.getTime()) ? null : date;
+}
+
+function asNumber(value: unknown): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  if (Array.isArray(value) && value.length > 0) return asNumber(value[0]);
+  return null;
 }
 
 type WizardStep = "grunddaten" | "vertragsart" | "details" | "ergebnis";
@@ -54,7 +103,9 @@ export default function Home() {
     useState<AltvertragClause>("vpiAnnual");
 
   // Step 3a: Neuvertrag fields
-  const [valorisationYear, setValorisationYear] = useState<number>(2027);
+  const [valorisationYear, setValorisationYear] = useState<number>(
+    VALORISATION_YEARS[VALORISATION_YEARS.length - 1]
+  );
   const [customVpi, setCustomVpi] = useState<string>("");
   const [lastValorisationDate, setLastValorisationDate] = useState<string>("");
   const [alreadyInMieWeG, setAlreadyInMieWeG] = useState<boolean>(false);
@@ -69,7 +120,9 @@ export default function Home() {
   );
   const [staffelValue, setStaffelValue] = useState<string>("3");
   const [staffelMonth, setStaffelMonth] = useState<number>(0);
-  const [altTargetYear, setAltTargetYear] = useState<number>(2028);
+  const [altTargetYear, setAltTargetYear] = useState<number>(
+    VALORISATION_YEARS[VALORISATION_YEARS.length - 1]
+  );
   const [proposedRent, setProposedRent] = useState<string>("");
 
   const autoContractMode: ContractMode = useMemo(() => {
@@ -229,6 +282,99 @@ export default function Home() {
     finalRent != null &&
     Math.round(parseFloat(proposedRent) * 100) > finalRent;
 
+  const miewegTimelineData = useMemo(() => {
+    if (!showResult?.multiYearSteps || showResult.multiYearSteps.length === 0)
+      return [];
+    return showResult.multiYearSteps.map((step) => ({
+      yearLabel: `1.4.${step.inflationYear + 1}`,
+      rentEur: step.rentAfterCents / 100,
+      ratePercent: step.ratePercent,
+    }));
+  }, [showResult]);
+
+  const aliquotVisual = useMemo(() => {
+    if (showParallel && showParallel.steps.length > 0) {
+      const firstYear = showParallel.steps[0]?.year;
+      if (firstYear == null) return null;
+      const referenceDate =
+        (altHadValorisation && parseDateInput(altLastValorisationDate)) ||
+        parseDateInput(contractDate);
+      if (!referenceDate) return null;
+      const fullMonths = getFullMonthsInPriorYear(firstYear, referenceDate);
+      if (fullMonths >= 12) return null;
+      const inflationYear = firstYear - 1;
+      const baseRate = computeRateForYear(
+        getVpiChangeForYear(inflationYear) ?? DEFAULT_VPI_FALLBACK,
+        firstYear,
+        apartmentType
+      );
+      return {
+        fullMonths,
+        baseRate,
+        aliquotRate: (baseRate * fullMonths) / 12,
+        yearLabel: `1.4.${firstYear}`,
+      };
+    }
+
+    if (!showResult) return null;
+    const referenceDate =
+      parseDateInput(lastValorisationDate) ?? parseDateInput(contractDate);
+    if (!referenceDate) return null;
+
+    if (showResult.multiYearSteps && showResult.multiYearSteps.length > 0) {
+      if (alreadyInMieWeG) return null;
+      const firstStep = showResult.multiYearSteps[0];
+      if (!firstStep) return null;
+      const firstYear = firstStep.inflationYear + 1;
+      const fullMonths = getFullMonthsInPriorYear(firstYear, referenceDate);
+      if (fullMonths >= 12) return null;
+      const baseRate = computeRateForYear(
+        getVpiChangeForYear(firstStep.inflationYear) ?? DEFAULT_VPI_FALLBACK,
+        firstYear,
+        apartmentType
+      );
+      return {
+        fullMonths,
+        baseRate,
+        aliquotRate: firstStep.ratePercent,
+        yearLabel: `1.4.${firstYear}`,
+      };
+    }
+
+    if (showResult.appliedRatePercent >= showResult.effectiveRatePercent) {
+      return null;
+    }
+    const fullMonths = getFullMonthsInPriorYear(valorisationYear, referenceDate);
+    if (fullMonths >= 12) return null;
+    return {
+      fullMonths,
+      baseRate: showResult.effectiveRatePercent,
+      aliquotRate: showResult.appliedRatePercent,
+      yearLabel: `1.4.${valorisationYear}`,
+    };
+  }, [
+    showParallel,
+    showResult,
+    altHadValorisation,
+    altLastValorisationDate,
+    contractDate,
+    apartmentType,
+    lastValorisationDate,
+    alreadyInMieWeG,
+    valorisationYear,
+  ]);
+
+  const aliquotChartData = useMemo(() => {
+    if (!aliquotVisual) return [];
+    return [
+      { label: "Volle Jahresrate", percent: aliquotVisual.baseRate },
+      {
+        label: `Aliquot ${aliquotVisual.fullMonths}/12`,
+        percent: aliquotVisual.aliquotRate,
+      },
+    ];
+  }, [aliquotVisual]);
+
   const months = [
     "Jänner",
     "Februar",
@@ -243,6 +389,11 @@ export default function Home() {
     "November",
     "Dezember",
   ];
+  const currentYear = new Date().getFullYear();
+  const lastIndexationYearOptions = Array.from(
+    { length: currentYear - 1986 + 1 },
+    (_, i) => currentYear - i
+  );
 
   const contractYear = Number(contractDate.split("-")[0]);
   const suggestedVpiBase =
@@ -456,7 +607,7 @@ export default function Home() {
                           const mi = Number(m);
                           const y = altLastValorisationDate
                             ? altLastValorisationDate.split("-")[0]
-                            : "2024";
+                            : String(currentYear);
                           setAltLastValorisationDate(
                             `${y}-${String(mi + 1).padStart(2, "0")}-01`
                           );
@@ -488,7 +639,7 @@ export default function Home() {
                         className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
                       >
                         <option value="">Jahr wählen</option>
-                        {[2020, 2021, 2022, 2023, 2024, 2025].map((yr) => (
+                        {lastIndexationYearOptions.map((yr) => (
                           <option key={yr} value={yr}>
                             {yr}
                           </option>
@@ -711,6 +862,10 @@ export default function Home() {
                       </option>
                     ))}
                   </select>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Nur Jahre mit offiziellen VPI-Jahresdurchschnittswerten
+                    (derzeit bis 1.4.{MAX_RELIABLE_VALORISATION_YEAR}).
+                  </p>
                   {firstIndexationDate && (
                     <p className="mt-1 text-xs text-zinc-500">
                       Mietanpassungen sind nur ab dem 1.4.
@@ -804,6 +959,8 @@ export default function Home() {
                     </select>
                     <p className="mt-1 text-xs text-zinc-500">
                       Das Jahr, für das Sie die zulässige Miete prüfen möchten.
+                      Nur Jahre mit offiziellen VPI-Jahresdurchschnittswerten
+                      (derzeit bis 1.4.{MAX_RELIABLE_VALORISATION_YEAR}).
                     </p>
                   </div>
 
@@ -1075,6 +1232,54 @@ export default function Home() {
                     <li key={i}>{line}</li>
                   ))}
                 </ul>
+
+                {miewegTimelineData.length > 1 && (
+                  <div className="mt-6">
+                    <h3 className="text-sm font-semibold text-zinc-900">
+                      Zeitachse der MieWeG-Anpassung
+                    </h3>
+                    <p className="mt-1 text-sm text-zinc-600">
+                      Die Kurve zeigt, wie sich die zulässige Miete von Jahr zu
+                      Jahr unter den MieWeG-Grenzen entwickelt.
+                    </p>
+                    <div className="mt-3 h-72 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={miewegTimelineData}
+                          margin={{ top: 12, right: 24, left: 4, bottom: 10 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="yearLabel" />
+                          <YAxis
+                            tickFormatter={(value: number) =>
+                              formatEur(Math.round(value * 100))
+                            }
+                            width={92}
+                          />
+                          <Tooltip
+                            formatter={(value) => {
+                              const numericValue = asNumber(value);
+                              if (numericValue == null) return ["-", "Miete"];
+                              return [
+                                formatEur(Math.round(numericValue * 100)),
+                                "Miete",
+                              ];
+                            }}
+                          />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="rentEur"
+                            name="Miete"
+                            stroke="#ea580c"
+                            strokeWidth={2}
+                            dot={{ r: 3 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1160,6 +1365,42 @@ export default function Home() {
                     tatsächliche Miete kann daher niedriger sein.
                   </div>
                 )}
+              </div>
+            )}
+
+            {aliquotVisual && aliquotChartData.length > 0 && (
+              <div className="rounded-xl border border-zinc-100 bg-white p-6 shadow">
+                <h2 className="text-lg font-semibold text-zinc-900">
+                  Aliquotierung verständlich erklärt
+                </h2>
+                <p className="mt-2 text-sm text-zinc-600">
+                  Bei der ersten MieWeG-Anpassung wird nur der Anteil der
+                  vollen Monate im Vorjahr berücksichtigt. Für{" "}
+                  {aliquotVisual.yearLabel} gilt daher:{" "}
+                  {aliquotVisual.baseRate.toFixed(4)}% ×{" "}
+                  {aliquotVisual.fullMonths}/12 ={" "}
+                  {aliquotVisual.aliquotRate.toFixed(4)}%.
+                </p>
+                <div className="mt-3 h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={aliquotChartData}
+                      margin={{ top: 12, right: 24, left: 4, bottom: 8 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="label" />
+                      <YAxis tickFormatter={(v: number) => `${v.toFixed(2)}%`} />
+                      <Tooltip
+                        formatter={(value) => {
+                          const numericValue = asNumber(value);
+                          if (numericValue == null) return ["-", "Satz"];
+                          return [`${numericValue.toFixed(4)}%`, "Satz"];
+                        }}
+                      />
+                      <Bar dataKey="percent" fill="#ea580c" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             )}
 

@@ -13,10 +13,10 @@
   "dependencies": {
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "recharts": "^3.8.0"
   },
   "devDependencies": {
-    "xlsx": "^0.18.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -25,6 +25,7 @@
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "xlsx": "^0.18.5"
   }
 }
