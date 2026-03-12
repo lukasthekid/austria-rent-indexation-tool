@@ -12,10 +12,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
+      url: `${baseUrl}/faq`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/mieterhoeung-berechnen`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/wissen`,
       lastModified: new Date(),
       changeFrequency: "monthly" as const,
       priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/mietpreisbremse`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
     },
   ];
 }

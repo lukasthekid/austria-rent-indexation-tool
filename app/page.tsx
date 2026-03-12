@@ -498,7 +498,7 @@ export default function Home() {
                 className="h-10 w-10 shrink-0 sm:h-12 sm:w-12"
               />
               <h1 className="min-w-0 text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl">
-                Ist Ihre Mietzinserhöhung rechtskonform?
+                Mieterhöhung berechnen – kostenloser MieWeG-Rechner 2026
               </h1>
             </div>
             <Link
@@ -509,8 +509,8 @@ export default function Home() {
             </Link>
           </div>
           <p className="text-base text-zinc-600 sm:text-lg">
-            Ihre Mietzinserhöhung auf einen Klick geprüft – nach
-            österreichischem MieWeG. Kostenlos, nur für Österreich.
+            Mieterhöhung in Österreich legal prüfen – nach der Mietpreisbremse
+            (MieWeG). Kostenlos für Altvertrag & Neuvertrag.
           </p>
           <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-600 sm:text-base">
             <p>

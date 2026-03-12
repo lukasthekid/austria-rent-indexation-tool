@@ -5,13 +5,13 @@ import Link from "next/link";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://mietcheck-at.vercel.app";
 
 export const metadata: Metadata = {
-  title: "MieWeG & 5. MILG – Wissen",
+  title: "Mietpreisbremse Österreich 2026 – MieWeG einfach erklärt",
   description:
-    "Erklärungen zu MieWeG, 3%-Regel, Spezialdeckel 2026/2027 und Aliquotierung. Basis: 5. Mietrechtliches Inflationslinderungsgesetz, in Kraft ab 1.1.2026.",
+    "Wie funktioniert die Mietpreisbremse in Österreich 2026? Erklärung zu MieWeG, 3%-Regel, Sonderdeckel für preisgeschützte Wohnungen und Aliquotierung – verständlich erklärt.",
   openGraph: {
-    title: "MieWeG & 5. MILG – Wissen | MietCheck-AT",
+    title: "Mietpreisbremse Österreich 2026 – MieWeG einfach erklärt | MietCheck-AT",
     description:
-      "Erklärungen zu MieWeG, 3%-Regel, Spezialdeckel und Aliquotierung nach dem 5. MILG.",
+      "Wie funktioniert die Mietpreisbremse in Österreich 2026? MieWeG, 3%-Regel, Sonderdeckel und Aliquotierung verständlich erklärt.",
     url: `${SITE_URL}/wissen`,
   },
   alternates: { canonical: "/wissen" },
@@ -58,7 +58,7 @@ export default function WissenPage() {
                 />
               </Link>
               <h1 className="min-w-0 text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl">
-                MieWeG & 5. MILG – Wissen
+                Mietpreisbremse Österreich 2026 – MieWeG einfach erklärt
               </h1>
             </div>
             <Link
@@ -69,8 +69,9 @@ export default function WissenPage() {
             </Link>
           </div>
           <p className="text-base text-zinc-600 sm:text-lg">
-            Erklärungen zu den zentralen Begriffen des Mieten-Wertsicherungsgesetzes
-            und des 5. Mietrechtlichen Inflationslinderungsgesetzes (5. MILG).
+            Wie funktioniert die Mietpreisbremse in Österreich? Alle zentralen
+            Begriffe des MieWeG – 3%-Regel, Sonderdeckel und Aliquotierung –
+            verständlich erklärt.
           </p>
         </header>
 
