@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useMemo } from "react";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 import {
   calculateMieWeGRent,
   computeRateForYear,
@@ -33,6 +33,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import CalculationReportPdf from "@/components/CalculationReportPdf";
+import { buildCalculationReportPayload } from "@/lib/report-payload";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MIN_VALORISATION_YEAR = 2026;
@@ -364,6 +366,70 @@ export default function RentCalculator() {
     proposedRent !== "" &&
     finalRent != null &&
     Math.round(parseFloat(proposedRent) * 100) > finalRent;
+
+  const reportPayload = useMemo(() => {
+    const targetYear =
+      effectiveMode === "altvertrag" && altvertragClause !== "unknown"
+        ? altTargetYear
+        : valorisationYear;
+    return buildCalculationReportPayload({
+      contractMode: effectiveMode,
+      apartmentType,
+      targetYear,
+      inflationYear: targetYear - 1,
+      currentRent,
+      contractDate,
+      lastValorisationDate,
+      alreadyInMieWeG,
+      altHadValorisation,
+      altLastValorisationDate,
+      altvertragClause,
+      vpiPercent,
+      usedCustomVpi: customVpi.trim() !== "",
+      adjustmentMonth,
+      vpiBase,
+      thresholdPercent,
+      baseIndexValue,
+      staffelType,
+      staffelValue,
+      staffelMonth,
+      proposedRent,
+      showResult,
+      showParallel,
+      finalRent: finalRent ?? null,
+    });
+  }, [
+    effectiveMode,
+    apartmentType,
+    altTargetYear,
+    valorisationYear,
+    currentRent,
+    contractDate,
+    lastValorisationDate,
+    alreadyInMieWeG,
+    altHadValorisation,
+    altLastValorisationDate,
+    altvertragClause,
+    vpiPercent,
+    customVpi,
+    adjustmentMonth,
+    vpiBase,
+    thresholdPercent,
+    baseIndexValue,
+    staffelType,
+    staffelValue,
+    staffelMonth,
+    proposedRent,
+    showResult,
+    showParallel,
+    finalRent,
+  ]);
+
+  const pdfFileName = useMemo(() => {
+    const date = new Date().toISOString().slice(0, 10);
+    const modePrefix = showParallel ? "parallelrechnung" : "mieweg";
+    return `mietcheck-berechnungsblatt-${modePrefix}-${date}.pdf`;
+  }, [showParallel]);
 
   const miewegTimelineData = useMemo(() => {
     if (!showResult?.multiYearSteps || showResult.multiYearSteps.length === 0)
@@ -1554,6 +1620,29 @@ export default function RentCalculator() {
                     zulässigen Betrag von {formatEur(finalRent)}.
                   </p>
                 )}
+              </div>
+            )}
+
+            {reportPayload && (
+              <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow sm:p-6">
+                <h3 className="text-base font-semibold text-zinc-900">
+                  Berechnungsblatt als PDF
+                </h3>
+                <p className="mt-1 text-sm text-zinc-600">
+                  Laden Sie alle Eingaben, Rechenschritte und Hinweise als
+                  nachvollziehbares Berechnungsblatt herunter.
+                </p>
+                <div className="mt-4">
+                  <PDFDownloadLink
+                    document={<CalculationReportPdf payload={reportPayload} />}
+                    fileName={pdfFileName}
+                    className="inline-flex min-h-[44px] items-center rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800"
+                  >
+                    {({ loading }) =>
+                      loading ? "PDF wird erstellt..." : "PDF herunterladen"
+                    }
+                  </PDFDownloadLink>
+                </div>
               </div>
             )}
 

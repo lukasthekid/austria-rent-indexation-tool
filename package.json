@@ -11,6 +11,7 @@
     "update-vpi": "node scripts/update-vpi-data.mjs"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.3.2",
     "@vercel/analytics": "^2.0.0",
     "@vercel/speed-insights": "^2.0.0",
     "next": "16.1.6",

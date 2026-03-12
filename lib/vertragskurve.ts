@@ -68,8 +68,10 @@ export function calculateVpiAnnualCurve(
   const refMonth = referenceDate.getMonth();
 
   for (let valorisationYear = startYear; valorisationYear <= endYear; valorisationYear++) {
+    // Months 0–3 (Jan–Apr): adjustment falls on or before April 1 → same valorisation year.
+    // Months 4–11 (May–Dec): adjustment falls after April 1 → shifts to next April 1 (prior year).
     const contractAdjustmentYear =
-      params.adjustmentMonth <= 2 ? valorisationYear : valorisationYear - 1;
+      params.adjustmentMonth <= 3 ? valorisationYear : valorisationYear - 1;
 
     const hasPassedRef =
       contractAdjustmentYear > refYear ||
@@ -175,8 +177,10 @@ export function calculateStaffelCurve(
   const refMonth = referenceDate.getMonth();
 
   for (let valorisationYear = startYear; valorisationYear <= endYear; valorisationYear++) {
+    // Months 0–3 (Jan–Apr): increase falls on or before April 1 → same valorisation year.
+    // Months 4–11 (May–Dec): increase falls after April 1 → shifts to next April 1 (prior year).
     const increaseYear =
-      params.increaseMonth <= 2 ? valorisationYear : valorisationYear - 1;
+      params.increaseMonth <= 3 ? valorisationYear : valorisationYear - 1;
 
     const hasPassedRef =
       increaseYear > refYear ||

@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const navLinks = [
-  { href: "/", label: "Start" },
   { href: "/mieterhoeung-berechnen", label: "Rechner" },
   { href: "/mietpreisbremse", label: "Mietpreisbremse" },
   { href: "/wissen", label: "MieWeG erklärt" },

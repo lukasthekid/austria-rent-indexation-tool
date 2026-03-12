@@ -33,7 +33,8 @@ export interface ParallelrechnungStep {
   vertragRentCents: number;
   miewegRentCents: number;
   actualRentCents: number;
-  binding: 'vertrag' | 'mieweg' | 'equal';
+  /** 'none' when contract did not trigger (rent unchanged) */
+  binding: 'vertrag' | 'mieweg' | 'equal' | 'none';
   contractTriggered: boolean;
 }
 
@@ -60,6 +61,7 @@ export function calculateParallelrechnung(
   const referenceDate = lastValorisationMonth ?? contractDate;
   const refYear = referenceDate.getFullYear();
   const startYear = Math.max(refYear + 1, 2026);
+  const controlStartYear = refYear + 1;
 
   if (startYear > targetYear) {
     return {
@@ -83,17 +85,18 @@ export function calculateParallelrechnung(
     baseRentCents,
     referenceDate,
     apartmentType,
-    startYear,
+    startYear: controlStartYear,
     endYear: targetYear,
     vpiOverrideByYear,
   });
+  const begrenzungByYear = new Map(begrenzungSteps.map((step) => [step.year, step]));
 
   const steps: ParallelrechnungStep[] = [];
   let actualRentCents = baseRentCents;
 
   for (let i = 0; i < vertragSteps.length; i++) {
     const vStep = vertragSteps[i];
-    const bStep = begrenzungSteps[i];
+    const bStep = begrenzungByYear.get(vStep.year);
 
     if (!vStep || !bStep) break;
 
@@ -106,7 +109,7 @@ export function calculateParallelrechnung(
         vertragRentCents: vertragRent,
         miewegRentCents: miewegRent,
         actualRentCents,
-        binding: 'vertrag',
+        binding: 'none',
         contractTriggered: false,
       });
       continue;

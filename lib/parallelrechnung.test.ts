@@ -72,7 +72,7 @@ describe('calculateVertragskurve', () => {
 });
 
 describe('calculateParallelrechnung', () => {
-  it('vpiAnnual free: MieWeG caps high inflation', () => {
+  it('vpiAnnual free: contractual curve can bind below accumulated MieWeG curve', () => {
     const result = calculateParallelrechnung({
       baseRentCents: 80000,
       contractDate: new Date(2024, 5, 1),
@@ -85,12 +85,14 @@ describe('calculateParallelrechnung', () => {
 
     expect(result.steps).toHaveLength(2);
 
-    // 2026: Contract 3.5%, MieWeG caps at 3.25% (3 + 0.5/2)
+    // With June 2024 reference, the MieWeG control includes:
+    // 2025 step (inflation 2024, aliquotiert 6/12) + 2026 step (inflation 2025).
     const s2026 = result.steps[0];
     expect(s2026.contractTriggered).toBe(true);
-    expect(s2026.vertragRentCents).toBeGreaterThan(s2026.miewegRentCents);
-    expect(s2026.binding).toBe('mieweg');
-    expect(s2026.actualRentCents).toBe(s2026.miewegRentCents);
+    expect(s2026.vertragRentCents).toBe(82800);
+    expect(s2026.miewegRentCents).toBe(83942);
+    expect(s2026.binding).toBe('vertrag');
+    expect(s2026.actualRentCents).toBe(s2026.vertragRentCents);
   });
 
   it('vpiAnnual preisgeschützt 2026: caps at 1%', () => {
@@ -109,10 +111,9 @@ describe('calculateParallelrechnung', () => {
     expect(s.binding).toBe('mieweg');
     // Contract: 80000 * 1.035 = 82800
     expect(s.vertragRentCents).toBe(82800);
-    // MieWeG preisgeschützt 2026: 1% cap, ref June 2024 → priorYear 2025 > refYear → no aliquotierung
-    // 80000 * 1.01 = 80800
-    expect(s.miewegRentCents).toBe(80800);
-    expect(s.actualRentCents).toBe(80800);
+    // MieWeG control includes 2025 (aliquotiert) and then 2026 (1% cap for preisgeschützt).
+    expect(s.miewegRentCents).toBe(82113);
+    expect(s.actualRentCents).toBe(82113);
   });
 
   it('vpiThreshold: no increase when contract does not trigger', () => {
@@ -156,7 +157,7 @@ describe('calculateParallelrechnung', () => {
     expect(s2026.binding).toBe('vertrag');
   });
 
-  it('staffel 4%: MieWeG caps the increase', () => {
+  it('staffel 4%: contract can still bind when MieWeG control is higher', () => {
     const result = calculateParallelrechnung({
       baseRentCents: 80000,
       contractDate: new Date(2024, 5, 1),
@@ -172,10 +173,10 @@ describe('calculateParallelrechnung', () => {
     expect(s.contractTriggered).toBe(true);
     // Staffel 4%: 80000 * 1.04 = 83200
     expect(s.vertragRentCents).toBe(83200);
-    // MieWeG with aliquotierung will be less
-    expect(s.miewegRentCents).toBeLessThan(83200);
-    expect(s.binding).toBe('mieweg');
-    expect(s.actualRentCents).toBe(s.miewegRentCents);
+    // With accumulated pre-2026 control, MieWeG is higher than the contractual step.
+    expect(s.miewegRentCents).toBe(83942);
+    expect(s.binding).toBe('vertrag');
+    expect(s.actualRentCents).toBe(s.vertragRentCents);
   });
 
   it('returns empty steps when startYear > targetYear', () => {
@@ -190,6 +191,28 @@ describe('calculateParallelrechnung', () => {
 
     expect(result.steps).toHaveLength(0);
     expect(result.finalRentCents).toBe(80000);
+  });
+
+  it('includes pre-2026 years in MieWeG control curve for old reference dates', () => {
+    const result = calculateParallelrechnung({
+      baseRentCents: 100000,
+      contractDate: new Date(2023, 3, 1), // April 2023 reference
+      apartmentType: 'free',
+      clauseType: 'staffel',
+      clauseParams: { increaseType: 'percent', increaseValue: 20, increaseMonth: 0 },
+      targetYear: 2026,
+      vpiOverrideByYear: { 2023: 4, 2024: 4, 2025: 4 },
+    });
+
+    expect(result.steps).toHaveLength(1);
+    const step = result.steps[0];
+    // MieWeG control should accumulate:
+    // 2024: 3.5% * 8/12 = 2.333... -> 102333
+    // 2025: +3.5% -> 105915
+    // 2026: +3.5% -> 109622
+    expect(step.miewegRentCents).toBe(109622);
+    expect(step.binding).toBe('mieweg');
+    expect(step.actualRentCents).toBe(109622);
   });
 
   it('multi-year: steps accumulate correctly', () => {

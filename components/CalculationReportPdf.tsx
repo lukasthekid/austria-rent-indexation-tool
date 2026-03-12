@@ -1,0 +1,386 @@
+import {
+  Document,
+  Page,
+  StyleSheet,
+  Text,
+  View,
+} from "@react-pdf/renderer";
+import type { CalculationReportPayload } from "@/lib/report-payload";
+
+const styles = StyleSheet.create({
+  page: {
+    paddingTop: 28,
+    paddingBottom: 28,
+    paddingHorizontal: 30,
+    fontSize: 10,
+    color: "#111827",
+    lineHeight: 1.4,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: 700,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 10,
+    color: "#4b5563",
+    marginBottom: 14,
+  },
+  section: {
+    marginBottom: 12,
+    border: "1 solid #e5e7eb",
+    borderRadius: 4,
+    padding: 8,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: 700,
+    marginBottom: 6,
+  },
+  row: {
+    flexDirection: "row",
+    marginBottom: 3,
+    gap: 8,
+  },
+  label: {
+    width: "45%",
+    color: "#374151",
+  },
+  value: {
+    width: "55%",
+    fontWeight: 600,
+  },
+  listItem: {
+    marginBottom: 3,
+  },
+  listPrefix: {
+    color: "#6b7280",
+  },
+  resultBox: {
+    padding: 8,
+    borderRadius: 4,
+    border: "1 solid #d1d5db",
+    backgroundColor: "#f9fafb",
+  },
+  strong: {
+    fontWeight: 700,
+  },
+  formulaLine: {
+    marginBottom: 3,
+    fontSize: 9.5,
+    color: "#111827",
+  },
+  disclaimer: {
+    color: "#4b5563",
+    fontSize: 9,
+    marginBottom: 3,
+  },
+  footer: {
+    marginTop: 8,
+    fontSize: 8.5,
+    color: "#6b7280",
+  },
+});
+
+function formatEur(cents: number): string {
+  return new Intl.NumberFormat("de-AT", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
+function formatPercent(value: number): string {
+  return `${value.toFixed(2)} %`;
+}
+
+function toDecimalRate(percent: number): string {
+  return (percent / 100).toFixed(6);
+}
+
+function formatDate(isoOrDate: string): string {
+  const date = new Date(isoOrDate);
+  if (Number.isNaN(date.getTime())) return isoOrDate;
+  return new Intl.DateTimeFormat("de-AT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatIndexValue(value: number | null): string {
+  if (value == null) return "n/v";
+  return value.toFixed(3);
+}
+
+type Props = {
+  payload: CalculationReportPayload;
+};
+
+export default function CalculationReportPdf({ payload }: Props) {
+  const isParallel = payload.parallelResult != null;
+  const formulaLines: string[] = [];
+
+  if (payload.miewegResult) {
+    const startRent = payload.inputs.currentRentCents;
+
+    if (payload.miewegResult.multiYearSteps.length > 0) {
+      let previousRent = startRent;
+      payload.miewegResult.multiYearSteps.forEach((step) => {
+        formulaLines.push(
+          `MieWeG ${step.inflationYear}: ${formatEur(previousRent)} × (1 + ${toDecimalRate(
+            step.ratePercent
+          )}) = ${formatEur(step.rentAfterCents)}`
+        );
+        previousRent = step.rentAfterCents;
+      });
+    } else {
+      formulaLines.push(
+        `MieWeG: ${formatEur(startRent)} × (1 + ${toDecimalRate(
+          payload.miewegResult.appliedRatePercent
+        )}) = ${formatEur(payload.miewegResult.newRentCents)}`
+      );
+    }
+  }
+
+  if (payload.parallelResult) {
+    let previousActual = payload.inputs.currentRentCents;
+    let previousContract = payload.inputs.currentRentCents;
+    payload.parallelResult.steps.forEach((step) => {
+      if (!step.contractTriggered) {
+        formulaLines.push(
+          `Parallel ${step.year}: keine vertragliche Auslösung -> ${formatEur(
+            previousActual
+          )}`
+        );
+        previousContract = step.vertragRentCents;
+        return;
+      }
+
+      const contractDeltaPercent =
+        previousContract > 0
+          ? ((step.vertragRentCents - previousContract) / previousContract) * 100
+          : 0;
+      formulaLines.push(
+        `Vertragskurve ${step.year}: ${formatEur(previousContract)} × (1 + ${toDecimalRate(
+          contractDeltaPercent
+        )}) = ${formatEur(step.vertragRentCents)}`
+      );
+      const minCandidate = Math.min(step.vertragRentCents, step.miewegRentCents);
+      formulaLines.push(
+        `Parallel ${step.year}: min(Vertrag ${formatEur(
+          step.vertragRentCents
+        )}, MieWeG ${formatEur(step.miewegRentCents)}) = ${formatEur(
+          minCandidate
+        )}`
+      );
+      formulaLines.push(
+        `Parallel ${step.year}: max(Vorjahr ${formatEur(
+          previousActual
+        )}, min-Wert ${formatEur(minCandidate)}) = ${formatEur(
+          step.actualRentCents
+        )}`
+      );
+      previousActual = step.actualRentCents;
+      previousContract = step.vertragRentCents;
+    });
+  }
+
+  return (
+    <Document title="MietCheck Berechnungsblatt">
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.title}>MietCheck-AT Berechnungsblatt</Text>
+        <Text style={styles.subtitle}>
+          Erstellt am {formatDate(payload.reportMeta.createdAtIso)} -{" "}
+          {payload.caseContext.legalLabel}
+        </Text>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Fallkontext</Text>
+          <View style={styles.row}>
+            <Text style={styles.label}>Vertragstyp</Text>
+            <Text style={styles.value}>
+              {payload.caseContext.contractMode === "neuvertrag"
+                ? "Neuvertrag"
+                : "Altvertrag"}
+            </Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Wohnungstyp</Text>
+            <Text style={styles.value}>
+              {payload.caseContext.apartmentType === "preisgeschützt"
+                ? "Preisgeschützt"
+                : "Freier Mietzins"}
+            </Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Zieljahr (Anpassung)</Text>
+            <Text style={styles.value}>1.4.{payload.caseContext.targetYear}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Inflationsjahr</Text>
+            <Text style={styles.value}>{payload.caseContext.inflationYear}</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Eingabedaten</Text>
+          <View style={styles.row}>
+            <Text style={styles.label}>Aktuelle Miete</Text>
+            <Text style={styles.value}>{formatEur(payload.inputs.currentRentCents)}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Vertragsdatum</Text>
+            <Text style={styles.value}>{payload.inputs.contractDate}</Text>
+          </View>
+          {payload.inputs.lastValorisationDate && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Letzte Valorisierung</Text>
+              <Text style={styles.value}>{payload.inputs.lastValorisationDate}</Text>
+            </View>
+          )}
+          {payload.inputs.altLastValorisationDate && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Letzte Indexierung Altvertrag</Text>
+              <Text style={styles.value}>{payload.inputs.altLastValorisationDate}</Text>
+            </View>
+          )}
+          <View style={styles.row}>
+            <Text style={styles.label}>VPI-Änderung</Text>
+            <Text style={styles.value}>
+              {formatPercent(payload.inputs.vpiPercent)}{" "}
+              {payload.inputs.usedCustomVpi ? "(manuell)" : "(Standard)"}
+            </Text>
+          </View>
+          {payload.inputs.clauseDetails.map((item) => (
+            <View style={styles.row} key={item.label}>
+              <Text style={styles.label}>{item.label}</Text>
+              <Text style={styles.value}>{item.value}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            Rechenschritte {isParallel ? "(Parallelrechnung)" : "(MieWeG)"}
+          </Text>
+          {payload.miewegResult && (
+            <>
+              <Text style={[styles.listItem, styles.strong]}>MieWeG Breakdown:</Text>
+              {payload.miewegResult.breakdown.map((line, index) => (
+                <Text key={`${line}-${index}`} style={styles.listItem}>
+                  <Text style={styles.listPrefix}>- </Text>
+                  {line}
+                </Text>
+              ))}
+              {payload.miewegResult.multiYearSteps.length > 0 && (
+                <>
+                  <Text style={[styles.listItem, styles.strong]}>
+                    Mehrjahres-Schritte:
+                  </Text>
+                  {payload.miewegResult.multiYearSteps.map((step) => (
+                    <Text
+                      key={`${step.inflationYear}-${step.rentAfterCents}`}
+                      style={styles.listItem}
+                    >
+                      <Text style={styles.listPrefix}>- </Text>
+                      Inflation {step.inflationYear}: {formatPercent(step.ratePercent)}{" -> "}
+                      {formatEur(step.rentAfterCents)}
+                    </Text>
+                  ))}
+                </>
+              )}
+            </>
+          )}
+
+          {payload.parallelResult && payload.parallelResult.steps.length > 0 && (
+            <>
+              <Text style={[styles.listItem, styles.strong]}>Parallelrechnung je Jahr:</Text>
+              {payload.parallelResult.steps.map((step) => (
+                <Text key={step.year} style={styles.listItem}>
+                  <Text style={styles.listPrefix}>- </Text>
+                  {step.year}: Vertrag {formatEur(step.vertragRentCents)}, MieWeG{" "}
+                  {formatEur(step.miewegRentCents)}, maßgeblich{" "}
+                  {formatEur(step.actualRentCents)} ({step.contractTriggered ? step.binding : "keine Erhöhung"})
+                </Text>
+              ))}
+            </>
+          )}
+        </View>
+
+        {formulaLines.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Formeln der Berechnung</Text>
+            {formulaLines.map((line, index) => (
+              <Text key={`${line}-${index}`} style={styles.formulaLine}>
+                {index + 1}. {line}
+              </Text>
+            ))}
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Regeln und Rohdaten je Jahr</Text>
+          {payload.explainability.rules.map((rule, index) => (
+            <Text key={`rule-${index}`} style={styles.listItem}>
+              <Text style={styles.listPrefix}>- </Text>
+              {rule}
+            </Text>
+          ))}
+          <Text style={[styles.listItem, styles.strong]}>Verwendete VPI-Rohdaten:</Text>
+          {payload.explainability.vpiTrace.map((item) => (
+            <Text key={`vpi-${item.inflationYear}`} style={styles.listItem}>
+              <Text style={styles.listPrefix}>- </Text>
+              Jahr {item.inflationYear}: Ø Vorjahr {formatIndexValue(item.averagePrevYear)}, Ø Jahr{" "}
+              {formatIndexValue(item.averageCurrentYear)}, ungerundete Veränderung{" "}
+              {item.unroundedChangePercent != null
+                ? formatPercent(item.unroundedChangePercent)
+                : "n/v"}{" "}
+              (Quelle: {item.source})
+            </Text>
+          ))}
+        </View>
+
+        <View style={[styles.section, styles.resultBox]}>
+          <Text style={styles.sectionTitle}>Ergebnis</Text>
+          <Text style={styles.listItem}>
+            Maximal zulässige Miete:{" "}
+            <Text style={styles.strong}>
+              {formatEur(payload.outputs.finalAllowedRentCents)}
+            </Text>
+          </Text>
+          <Text style={styles.listItem}>
+            Gesamtänderung: <Text style={styles.strong}>{formatPercent(payload.outputs.totalChangePercent)}</Text>
+          </Text>
+          {payload.outputs.proposedCheck && (
+            <Text style={styles.listItem}>
+              Vorgeschlagene Miete: {formatEur(payload.outputs.proposedCheck.proposedCents)} -{" "}
+              {payload.outputs.proposedCheck.isAllowed
+                ? "zulässig"
+                : `nicht zulässig (Abweichung ${formatEur(
+                    payload.outputs.proposedCheck.deltaCents
+                  )})`}
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Hinweise</Text>
+          {payload.disclaimers.map((line, index) => (
+            <Text style={styles.disclaimer} key={`${line}-${index}`}>
+              - {line}
+            </Text>
+          ))}
+        </View>
+
+        <Text style={styles.footer}>
+          Dieses Berechnungsblatt wurde automatisch erzeugt und dient der
+          Nachvollziehbarkeit der im Rechner verwendeten Daten und Rechenschritte.
+        </Text>
+      </Page>
+    </Document>
+  );
+}
