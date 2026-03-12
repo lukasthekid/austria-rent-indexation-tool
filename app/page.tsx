@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { SiteFooter } from "@/components/SiteFooter";
 import { useState, useMemo } from "react";
 import {
   calculateMieWeGRent,
@@ -501,12 +502,9 @@ export default function Home() {
                 Mieterhöhung berechnen – kostenloser MieWeG-Rechner 2026
               </h1>
             </div>
-            <Link
-              href="/wissen"
-              className="shrink-0 text-sm font-medium text-red-600 hover:text-red-700"
-            >
-              Wissen
-            </Link>
+            <nav className="flex shrink-0 items-center gap-3 text-sm font-medium text-red-600" aria-label="Seitennavigation">
+              <Link href="/wissen" className="hover:text-red-700">Wissen</Link>
+            </nav>
           </div>
           <p className="text-base text-zinc-600 sm:text-lg">
             Mieterhöhung in Österreich legal prüfen – nach der Mietpreisbremse
@@ -1704,16 +1702,12 @@ export default function Home() {
               Zahlungen anpassen.
             </p>
           </div>
-          <div className="text-center text-xs text-zinc-500">
-            <p>
-              Basis: MieWeG (BGBl. I 2025), 5. MILG, in Kraft ab 1.1.2026.
-            </p>
-            <p className="mt-1">
-              Nicht erfasst: Mietverträge nach dem WGG (außer § 13 Abs 4),
-              Geschäftsraummieten, Voll-Ausnahmen vom MRG. Bei negativer
-              VPI-Entwicklung bleibt die Miete unverändert.
-            </p>
-          </div>
+          <p className="text-center text-xs text-zinc-500">
+            Nicht erfasst: Mietverträge nach dem WGG (außer § 13 Abs 4),
+            Geschäftsraummieten, Voll-Ausnahmen vom MRG. Bei negativer
+            VPI-Entwicklung bleibt die Miete unverändert.
+          </p>
+          <SiteFooter />
         </footer>
       </main>
     </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://mietcheck-at.vercel.app";
@@ -320,37 +321,7 @@ export default function MietpreisbremPage() {
           </section>
         </div>
 
-        <nav
-          className="mt-10 flex flex-wrap gap-3 border-t border-zinc-200 pt-6 text-sm sm:mt-12"
-          aria-label="Weitere Seiten"
-        >
-          <Link
-            href="/wissen"
-            className="text-red-600 hover:text-red-700 hover:underline"
-          >
-            MieWeG im Detail
-          </Link>
-          <span className="text-zinc-300">·</span>
-          <Link
-            href="/faq"
-            className="text-red-600 hover:text-red-700 hover:underline"
-          >
-            Häufige Fragen
-          </Link>
-          <span className="text-zinc-300">·</span>
-          <Link
-            href="/mieterhoeung-berechnen"
-            className="text-red-600 hover:text-red-700 hover:underline"
-          >
-            Mieterhöhung berechnen
-          </Link>
-        </nav>
-
-        <footer className="mt-8 border-t border-zinc-200 pt-6 text-center text-xs text-zinc-400">
-          Diese Seite dient der allgemeinen Information und ersetzt keine
-          Rechtsberatung. Im Einzelfall empfiehlt sich die Beratung durch die
-          Mietervereinigung Österreich oder einen Fachanwalt für Mietrecht.
-        </footer>
+        <SiteFooter />
       </main>
     </div>
   );

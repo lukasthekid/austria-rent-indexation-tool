@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://mietcheck-at.vercel.app";
 
@@ -242,19 +243,7 @@ export default function WissenPage() {
           </div>
         </article>
 
-        <footer className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-600">
-          <p className="font-medium text-zinc-700">Rechtlicher Hinweis</p>
-          <p className="mt-2">
-            Die Inhalte dienen der allgemeinen Information. Basis: MieWeG (BGBl.
-            I 2025), 5. MILG, in Kraft ab 1.1.2026. Für individuelle
-            rechtliche Fragen konsultieren Sie bitte eine sachkundige Person.
-          </p>
-          <p className="mt-4">
-            <Link href="/" className="font-medium text-red-600 hover:text-red-700">
-              Zurück zum Rechner
-            </Link>
-          </p>
-        </footer>
+        <SiteFooter />
       </main>
     </div>
   );
