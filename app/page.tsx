@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useMemo } from "react";
 import {
   calculateMieWeGRent,
@@ -487,17 +488,25 @@ export default function Home() {
       </div>
       <main className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <header className="mb-6 flex flex-col gap-3 border-b border-zinc-200 pb-6 sm:mb-8 sm:gap-4 sm:pb-8">
-          <div className="flex min-w-0 items-start gap-3 sm:items-center">
-            <Image
-              src="/MietCheck-logo.png"
-              alt="MietCheck-AT Logo"
-              width={48}
-              height={48}
-              className="h-10 w-10 shrink-0 sm:h-12 sm:w-12"
-            />
-            <h1 className="min-w-0 text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl">
-              Ist Ihre Mietzinserhöhung rechtskonform?
-            </h1>
+          <div className="flex min-w-0 items-start justify-between gap-3 sm:items-center">
+            <div className="flex min-w-0 items-start gap-3 sm:items-center">
+              <Image
+                src="/MietCheck-logo.png"
+                alt="MietCheck-AT Logo"
+                width={48}
+                height={48}
+                className="h-10 w-10 shrink-0 sm:h-12 sm:w-12"
+              />
+              <h1 className="min-w-0 text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl">
+                Ist Ihre Mietzinserhöhung rechtskonform?
+              </h1>
+            </div>
+            <Link
+              href="/wissen"
+              className="shrink-0 text-sm font-medium text-red-600 hover:text-red-700"
+            >
+              Wissen
+            </Link>
           </div>
           <p className="text-base text-zinc-600 sm:text-lg">
             Ihre Mietzinserhöhung auf einen Klick geprüft – nach

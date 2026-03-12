@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { StructuredData } from "@/components/StructuredData";
 import "./globals.css";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://mietcheck.at";
-const title = "Mietzinserhöhung prüfen – MieWeG Rechner | MietCheck-AT";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://mietcheck-at.vercel.app";
+const title = "MietCheck-AT | Rechner für Mietpreisbremse & MieWeG 2026 Österreich";
 const description =
-  "Prüfen Sie kostenlos, ob Ihre Mietzinserhöhung rechtskonform ist. MieWeG-Rechner für Neuverträge & Altverträge ab 2026. Maximal zulässige Miete berechnen – nur für Österreich.";
+  "Berechne deine Mieterhöhung nach dem neuen Mieten-Wertsicherungsgesetz (MieWeG). Kostenloser Rechner für die 3%-Deckelung, April-Valorisierung und Parallelrechnung für Altverträge.";
 
 export const metadata: Metadata = {
   title: {
@@ -13,12 +14,16 @@ export const metadata: Metadata = {
   },
   description,
   keywords: [
-    "Mietzinserhöhung prüfen",
-    "MieWeG Rechner",
+    "Mietpreisbremse Österreich",
+    "MieWeG 2026",
+    "Indexanpassung Miete 2026",
+    "5. MILG",
+    "Mietzinsrechner",
+    "Mieten-Wertsicherungsgesetz",
+    "3%-Deckelung Miete",
+    "April-Valorisierung",
+    "Parallelrechnung Altvertrag",
     "Mietzins Österreich",
-    "Wertsicherung berechnen",
-    "Miete erhöht rechtmäßig",
-    "Indexmiete 2026",
   ],
   authors: [{ name: "MietCheck-AT" }],
   creator: "MietCheck-AT",
@@ -30,11 +35,20 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "MietCheck-AT",
     url: SITE_URL,
+    images: [
+      {
+        url: "/MietCheck-logo.png",
+        width: 512,
+        height: 512,
+        alt: "MietCheck-AT – Rechner für Mietpreisbremse & MieWeG 2026",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
+    images: ["/MietCheck-logo.png"],
   },
   robots: { index: true, follow: true },
   alternates: { canonical: "/" },
@@ -140,6 +154,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de-AT" className="light">
+      <head>
+        <StructuredData />
+      </head>
       <body className="antialiased">
         <script
           type="application/ld+json"
