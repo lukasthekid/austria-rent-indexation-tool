@@ -80,6 +80,35 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     color: "#6b7280",
   },
+  pageBreakTitle: {
+    fontSize: 15,
+    fontWeight: 700,
+    marginBottom: 6,
+  },
+  pageBreakSubtitle: {
+    fontSize: 9.5,
+    color: "#374151",
+    marginBottom: 10,
+  },
+  auditBlock: {
+    marginBottom: 8,
+    border: "1 solid #e5e7eb",
+    borderRadius: 4,
+    padding: 7,
+  },
+  auditTitle: {
+    fontSize: 10.5,
+    fontWeight: 700,
+    marginBottom: 4,
+  },
+  auditLine: {
+    fontSize: 9.2,
+    marginBottom: 2,
+    color: "#111827",
+  },
+  muted: {
+    color: "#6b7280",
+  },
 });
 
 function formatEur(cents: number): string {
@@ -93,6 +122,11 @@ function formatEur(cents: number): string {
 
 function formatPercent(value: number): string {
   return `${value.toFixed(2)} %`;
+}
+
+function formatSignedPercent(value: number): string {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(4)} %`;
 }
 
 function toDecimalRate(percent: number): string {
@@ -123,6 +157,7 @@ type Props = {
 export default function CalculationReportPdf({ payload }: Props) {
   const isParallel = payload.parallelResult != null;
   const formulaLines: string[] = [];
+  const auditLines: string[] = [];
 
   if (payload.miewegResult) {
     const startRent = payload.inputs.currentRentCents;
@@ -186,6 +221,69 @@ export default function CalculationReportPdf({ payload }: Props) {
       );
       previousActual = step.actualRentCents;
       previousContract = step.vertragRentCents;
+    });
+  }
+
+  const vpiAuditLines = payload.explainability.vpiTrace.map((item) => {
+    if (item.averagePrevYear == null || item.averageCurrentYear == null || item.unroundedChangePercent == null) {
+      return `VPI ${item.inflationYear}: keine vollständigen Jahresdurchschnittswerte verfügbar (Quelle: ${item.source}).`;
+    }
+    return `VPI ${item.inflationYear}: ((${item.averageCurrentYear.toFixed(3)} - ${item.averagePrevYear.toFixed(
+      3
+    )}) / ${item.averagePrevYear.toFixed(3)}) x 100 = ${formatSignedPercent(
+      item.unroundedChangePercent
+    )} (ungerundet, Quelle: ${item.source})`;
+  });
+
+  if (payload.miewegResult) {
+    if (payload.miewegResult.multiYearSteps.length > 0) {
+      let prev = payload.inputs.currentRentCents;
+      payload.miewegResult.multiYearSteps.forEach((step) => {
+        auditLines.push(
+          `1.4.${step.inflationYear + 1}: ${formatEur(prev)} x (1 + ${toDecimalRate(
+            step.ratePercent
+          )}) = ${formatEur(step.rentAfterCents)}`
+        );
+        prev = step.rentAfterCents;
+      });
+    } else {
+      auditLines.push(
+        `MieWeG-Schritt: ${formatEur(payload.inputs.currentRentCents)} x (1 + ${toDecimalRate(
+          payload.miewegResult.appliedRatePercent
+        )}) = ${formatEur(payload.miewegResult.newRentCents)}`
+      );
+    }
+  }
+
+  const parallelAuditLines: string[] = [];
+  if (payload.parallelResult) {
+    let prevActual = payload.inputs.currentRentCents;
+    let prevContract = payload.inputs.currentRentCents;
+    payload.parallelResult.steps.forEach((step) => {
+      parallelAuditLines.push(`1.4.${step.year}: Vertragsausloesung ${step.contractTriggered ? "ja" : "nein"}.`);
+      if (!step.contractTriggered) {
+        parallelAuditLines.push(`  Keine Erhoehung, anwendbare Miete bleibt ${formatEur(prevActual)}.`);
+        prevContract = step.vertragRentCents;
+        return;
+      }
+
+      const contractRate = prevContract > 0 ? ((step.vertragRentCents - prevContract) / prevContract) * 100 : 0;
+      parallelAuditLines.push(
+        `  Vertragskurve: ${formatEur(prevContract)} x (1 + ${toDecimalRate(contractRate)}) = ${formatEur(
+          step.vertragRentCents
+        )}`
+      );
+      parallelAuditLines.push(`  Begrenzungskurve (MieWeG): ${formatEur(step.miewegRentCents)}`);
+      parallelAuditLines.push(
+        `  Vergleich: min(${formatEur(step.vertragRentCents)}, ${formatEur(
+          step.miewegRentCents
+        )}) = ${formatEur(Math.min(step.vertragRentCents, step.miewegRentCents))}`
+      );
+      parallelAuditLines.push(
+        `  Ergebnis fuer 1.4.${step.year}: ${formatEur(step.actualRentCents)} (${step.binding})`
+      );
+      prevActual = step.actualRentCents;
+      prevContract = step.vertragRentCents;
     });
   }
 
@@ -380,6 +478,77 @@ export default function CalculationReportPdf({ payload }: Props) {
           Dieses Berechnungsblatt wurde automatisch erzeugt und dient der
           Nachvollziehbarkeit der im Rechner verwendeten Daten und Rechenschritte.
         </Text>
+      </Page>
+
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.pageBreakTitle}>Pruefblatt zur Nachrechnung (letzte Seite)</Text>
+        <Text style={styles.pageBreakSubtitle}>
+          Diese Seite zeigt die Rechenlogik so, dass das Ergebnis ohne Gesetzestext Schritt fuer Schritt
+          kontrolliert werden kann.
+        </Text>
+
+        <View style={styles.auditBlock}>
+          <Text style={styles.auditTitle}>1) Grundformeln fuer die Kontrolle</Text>
+          <Text style={styles.auditLine}>- VPI-Jahresaenderung = ((JD Jahr n - JD Jahr n-1) / JD Jahr n-1) x 100</Text>
+          <Text style={styles.auditLine}>- MieWeG-Deckel (allgemein): bis 3 % voll, darueber nur die Haelfte</Text>
+          <Text style={styles.auditLine}>- Preisgeschuetzt: 1.4.2026 max 1 %, 1.4.2027 max 2 %</Text>
+          <Text style={styles.auditLine}>- Einstieg (Aliquotierung): gedeckelter Satz x (volle Monate / 12)</Text>
+          <Text style={styles.auditLine}>- Parallelrechnung: anwendbar ist min(Vertragskurve, Begrenzungskurve)</Text>
+          <Text style={[styles.auditLine, styles.muted]}>
+            Alle Geldwerte sind auf Cent nach MieWeG-Rundungsregel gerechnet.
+          </Text>
+        </View>
+
+        <View style={styles.auditBlock}>
+          <Text style={styles.auditTitle}>2) VPI-Rohdaten und ungerundete Ableitung</Text>
+          {vpiAuditLines.map((line, i) => (
+            <Text key={`vpi-audit-${i}`} style={styles.auditLine}>
+              - {line}
+            </Text>
+          ))}
+        </View>
+
+        {auditLines.length > 0 && (
+          <View style={styles.auditBlock}>
+            <Text style={styles.auditTitle}>3) MieWeG-Rechnung mit konkreten Zahlen</Text>
+            {auditLines.map((line, i) => (
+              <Text key={`mieweg-audit-${i}`} style={styles.auditLine}>
+                {i + 1}. {line}
+              </Text>
+            ))}
+          </View>
+        )}
+
+        {parallelAuditLines.length > 0 && (
+          <View style={styles.auditBlock}>
+            <Text style={styles.auditTitle}>4) Parallelrechnung pro Stichtag 1. April</Text>
+            {parallelAuditLines.map((line, i) => (
+              <Text key={`parallel-audit-${i}`} style={styles.auditLine}>
+                {line}
+              </Text>
+            ))}
+          </View>
+        )}
+
+        <View style={[styles.auditBlock, styles.resultBox]}>
+          <Text style={styles.auditTitle}>5) Endkontrolle</Text>
+          <Text style={styles.auditLine}>
+            Endergebnis laut Rechner: <Text style={styles.strong}>{formatEur(payload.outputs.finalAllowedRentCents)}</Text>
+          </Text>
+          <Text style={styles.auditLine}>
+            Gesamtveraenderung: <Text style={styles.strong}>{formatPercent(payload.outputs.totalChangePercent)}</Text>
+          </Text>
+          <Text style={[styles.auditLine, styles.muted]}>
+            Kontrollfrage: Ist die vorgeschlagene Miete kleiner/gleich dem Endergebnis?
+          </Text>
+          {payload.outputs.proposedCheck ? (
+            <Text style={styles.auditLine}>
+              Antwort: {payload.outputs.proposedCheck.isAllowed ? "Ja, zulaessig." : "Nein, nicht zulaessig."}
+            </Text>
+          ) : (
+            <Text style={styles.auditLine}>Antwort: Kein Vorschlagswert eingegeben.</Text>
+          )}
+        </View>
       </Page>
     </Document>
   );
