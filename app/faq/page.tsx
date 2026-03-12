@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
-import { SiteFooter } from "@/components/SiteFooter";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://mietcheck-at.vercel.app";
@@ -168,36 +166,11 @@ export default function FaqPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      <div className="flex h-1.5 w-full shrink-0">
-        <div className="flex-1 bg-red-600" />
-        <div className="flex-1 bg-white" />
-        <div className="flex-1 bg-red-600" />
-      </div>
-
       <main className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <header className="mb-6 flex flex-col gap-3 border-b border-zinc-200 pb-6 sm:mb-8 sm:gap-4 sm:pb-8">
-          <div className="flex min-w-0 items-start justify-between gap-3 sm:items-center">
-            <div className="flex min-w-0 items-start gap-3 sm:items-center">
-              <Link href="/" className="shrink-0">
-                <Image
-                  src="/MietCheck-logo.png"
-                  alt="MietCheck-AT Logo"
-                  width={48}
-                  height={48}
-                  className="h-10 w-10 sm:h-12 sm:w-12"
-                />
-              </Link>
-              <h1 className="min-w-0 text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl">
-                FAQ: Mieterhöhung 2026 Österreich
-              </h1>
-            </div>
-            <Link
-              href="/"
-              className="shrink-0 text-sm font-medium text-red-600 hover:text-red-700"
-            >
-              Rechner
-            </Link>
-          </div>
+          <h1 className="text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl">
+            FAQ: Mieterhöhung 2026 Österreich
+          </h1>
           <p className="text-base text-zinc-600 sm:text-lg">
             Häufige Fragen zur Mieterhöhung in Österreich – MieWeG,
             3%-Deckelung, Altvertrag, Neuvertrag, April-Valorisierung und
@@ -253,14 +226,12 @@ export default function FaqPage() {
             sehen Sie sofort, ob Ihre Mieterhöhung nach MieWeG zulässig ist.
           </p>
           <Link
-            href="/"
+            href="/mieterhoeung-berechnen"
             className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           >
             Jetzt Mieterhöhung berechnen →
           </Link>
         </div>
-
-        <SiteFooter />
       </main>
     </div>
   );
