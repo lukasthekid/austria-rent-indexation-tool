@@ -227,17 +227,17 @@ export default function HomePage() {
       </section>
 
       {/* Sticky CTA auf Mobile */}
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200 bg-white/95 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] backdrop-blur-sm lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200 bg-white/95 p-3 sm:p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] backdrop-blur-sm lg:hidden">
         <Link
           href="/mieterhoeung-berechnen"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-4 text-base font-bold text-white shadow-lg transition-colors hover:bg-red-700"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition-colors hover:bg-red-700 sm:px-6 sm:py-4 sm:text-base"
         >
           Jetzt kostenlos prüfen →
         </Link>
       </div>
 
       {/* Spacer für Sticky CTA */}
-      <div className="h-20 lg:hidden" aria-hidden />
+      <div className="h-16 sm:h-20 lg:hidden" aria-hidden />
     </div>
   );
 }

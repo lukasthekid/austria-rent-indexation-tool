@@ -565,7 +565,7 @@ export default function RentCalculator() {
           className="mb-6 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0"
           aria-label="Fortschritt"
         >
-          <div className="flex min-w-max items-center gap-1 py-1 text-sm sm:min-w-0 sm:flex-wrap sm:gap-2">
+          <div className="flex min-w-max items-center gap-1 py-1 text-xs sm:text-sm sm:min-w-0 sm:flex-wrap sm:gap-2">
             {(
               [
                 ["vertragsart", "Vertragstyp", "Typ"],
@@ -583,14 +583,14 @@ export default function RentCalculator() {
                 )}
                 <button
                   onClick={() => setStep(s)}
-                  className={`flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 transition-colors sm:min-h-0 sm:rounded-md sm:px-2 sm:py-1 ${
+                    className={`flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 transition-colors sm:min-h-0 sm:rounded-md sm:px-2 sm:py-1 ${
                     step === s
                       ? "bg-red-50 font-semibold text-red-700"
                       : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
                   }`}
                 >
                   <span
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium sm:h-5 sm:w-5 ${
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-medium sm:h-5 sm:w-5 ${
                       step === s ? "bg-red-600 text-white" : "bg-zinc-200 text-zinc-600"
                     }`}
                   >
@@ -754,7 +754,7 @@ export default function RentCalculator() {
                       als „VPI Februar 2025“. Maßgeblich ist der Monat der
                       Indexzahl, nicht der Tag der Anzeige.
                     </p>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                       <select
                         value={
                           altLastValorisationDate
@@ -1485,9 +1485,9 @@ export default function RentCalculator() {
 
                 {/* Comparison table – horizontal scroll auf Mobile */}
                 <div className="mt-6 overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-                  <table className="min-w-[360px] text-left text-sm">
+                  <table className="min-w-[340px] text-left text-xs sm:text-sm">
                     <thead>
-                      <tr className="border-b border-zinc-200 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                      <tr className="border-b border-zinc-200 text-[0.7rem] sm:text-xs font-medium uppercase tracking-wider text-zinc-500">
                         <th className="pb-2 pr-4">1. April</th>
                         <th className="pb-2 pr-4">Vertrag</th>
                         <th className="pb-2 pr-4">MieWeG</th>

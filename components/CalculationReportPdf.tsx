@@ -16,15 +16,34 @@ const styles = StyleSheet.create({
     color: "#111827",
     lineHeight: 1.4,
   },
+  header: {
+    marginBottom: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  logoBlock: {
+    flexDirection: "column",
+  },
+  logoText: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#b91c1c",
+  },
+  logoSubline: {
+    fontSize: 8.5,
+    color: "#6b7280",
+    marginTop: 2,
+  },
   title: {
     fontSize: 17,
     fontWeight: 700,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   subtitle: {
     fontSize: 10,
     color: "#4b5563",
-    marginBottom: 14,
+    marginBottom: 0,
   },
   section: {
     marginBottom: 12,
@@ -290,11 +309,19 @@ export default function CalculationReportPdf({ payload }: Props) {
   return (
     <Document title="MietCheck Berechnungsblatt">
       <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>MietCheck-AT Berechnungsblatt</Text>
-        <Text style={styles.subtitle}>
-          Erstellt am {formatDate(payload.reportMeta.createdAtIso)} -{" "}
-          {payload.caseContext.legalLabel}
-        </Text>
+        <View style={styles.header}>
+          <View style={styles.logoBlock}>
+            <Text style={styles.logoText}>MietCheck-AT</Text>
+            <Text style={styles.logoSubline}>Mieten-Wertsicherungsrechner</Text>
+          </View>
+          <View>
+            <Text style={styles.title}>Berechnungsblatt</Text>
+            <Text style={styles.subtitle}>
+              Erstellt am {formatDate(payload.reportMeta.createdAtIso)} -{" "}
+              {payload.caseContext.legalLabel}
+            </Text>
+          </View>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Fallkontext</Text>
@@ -472,6 +499,17 @@ export default function CalculationReportPdf({ payload }: Props) {
               - {line}
             </Text>
           ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Haftungsausschluss</Text>
+          <Text style={styles.disclaimer}>
+            Die Berechnungen dieses Rechners dienen ausschließlich der Vereinfachung und Orientierung. Es wird
+            keine Garantie für die rechtliche Richtigkeit, Vollständigkeit oder Aktualität der Angaben übernommen.
+            Insbesondere ersetzen die Ergebnisse keine individuelle Prüfung durch eine sachkundige Person.
+            Nutzer:innen sollten die Berechnungen stets selbst überprüfen oder rechtlichen Rat einholen, bevor sie
+            Entscheidungen treffen oder Zahlungen anpassen.
+          </Text>
         </View>
 
         <Text style={styles.footer}>

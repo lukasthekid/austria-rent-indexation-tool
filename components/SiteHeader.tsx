@@ -73,7 +73,7 @@ export function SiteHeader() {
           className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 md:hidden"
           aria-expanded={mobileMenuOpen}
           aria-controls="mobile-nav"
-          aria-label="Menü öffnen"
+          aria-label={mobileMenuOpen ? "Menü schließen" : "Menü öffnen"}
         >
           {mobileMenuOpen ? (
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
