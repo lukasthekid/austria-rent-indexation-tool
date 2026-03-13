@@ -3,6 +3,7 @@ import type {
   ParallelrechnungResult,
   ParallelrechnungStep,
 } from "./parallelrechnung";
+import type { BacklogResult } from "./rueckforderung";
 import { getVpiAverageForYear, getVpiChangeForYear } from "./vpi-data";
 
 export type ContractMode = "neuvertrag" | "altvertrag";
@@ -43,6 +44,10 @@ export interface CalculationReportPayload {
       maxAllowedCents: number;
       deltaCents: number;
     };
+  };
+  backlog?: {
+    totalBacklogCents: number;
+    perYear: Array<{ year: number; backlogCents: number }>;
   };
   explainability: {
     rules: string[];
@@ -99,6 +104,7 @@ export interface BuildCalculationReportPayloadInput {
   showResult: MieWeGResult | null;
   showParallel: ParallelrechnungResult | null;
   finalRent: number | null;
+  backlog: BacklogResult | null;
 }
 
 function toCents(value: string): number | null {
@@ -283,6 +289,16 @@ export function buildCalculationReportPayload(
       totalChangePercent,
       proposedCheck,
     },
+    backlog:
+      input.backlog && input.apartmentType === "free" && input.backlog.totalBacklogCents > 0
+        ? {
+            totalBacklogCents: input.backlog.totalBacklogCents,
+            perYear: input.backlog.perYear.map((entry) => ({
+              year: entry.year,
+              backlogCents: entry.backlogCents,
+            })),
+          }
+        : undefined,
     explainability: {
       rules: [
         "Zeitregel: Valorisierungen erfolgen am 1. April (MieWeG).",

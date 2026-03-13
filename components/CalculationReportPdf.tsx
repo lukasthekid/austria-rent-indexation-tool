@@ -490,6 +490,23 @@ export default function CalculationReportPdf({ payload }: Props) {
                   )})`}
             </Text>
           )}
+          {payload.backlog && payload.backlog.totalBacklogCents > 0 && (
+            <>
+              <Text style={[styles.listItem, styles.strong]}>
+                Mögliche rückwirkende Nachforderung bei freiem Mietzins
+              </Text>
+              <Text style={styles.listItem}>
+                Auf Basis der eingegebenen Daten könnte bei freiem Mietzins rechnerisch ein Rückstand von{" "}
+                <Text style={styles.strong}>{formatEur(payload.backlog.totalBacklogCents)}</Text> für die letzten bis
+                zu drei Jahre bestehen.
+              </Text>
+              {payload.backlog.perYear.map((entry) => (
+                <Text key={entry.year} style={styles.listItem}>
+                  - 1.4.{entry.year}: {formatEur(entry.backlogCents)} rechnerischer Rückstand
+                </Text>
+              ))}
+            </>
+          )}
         </View>
 
         <View style={styles.section}>

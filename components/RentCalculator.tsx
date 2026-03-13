@@ -22,6 +22,11 @@ import {
   calculateParallelrechnung,
   type ParallelrechnungStep,
 } from "@/lib/parallelrechnung";
+import {
+  calculateBacklogForFreeRentMieWeG,
+  calculateBacklogForFreeRentParallel,
+  type BacklogResult,
+} from "@/lib/rueckforderung";
 import type { ClauseType, ClauseParams } from "@/lib/vertragskurve";
 import {
   CartesianGrid,
@@ -367,6 +372,53 @@ export default function RentCalculator() {
     finalRent != null &&
     Math.round(parseFloat(proposedRent) * 100) > finalRent;
 
+  const backlog: BacklogResult | null = useMemo(() => {
+    if (apartmentType !== "free") return null;
+
+    const rentCents = Math.round(parseFloat(currentRent || "0") * 100);
+    if (!Number.isFinite(rentCents) || rentCents <= 0) return null;
+
+    if (showParallel) {
+      return calculateBacklogForFreeRentParallel({
+        currentRentCents: rentCents,
+        parallelResult: showParallel,
+      });
+    }
+
+    if (!showResult) return null;
+
+    const [y, m, d] = contractDate.split("-").map(Number);
+    const contractConclusionDate = new Date(y, (m ?? 1) - 1, d ?? 1);
+    if (isNaN(contractConclusionDate.getTime())) return null;
+
+    const lastValDate =
+      lastValorisationDate.trim() !== ""
+        ? parseDateInput(lastValorisationDate)
+        : null;
+
+    return calculateBacklogForFreeRentMieWeG({
+      currentRentCents: rentCents,
+      contractConclusionDate,
+      lastValorisationMonth: lastValDate ?? undefined,
+      apartmentType,
+      targetYear:
+        effectiveMode === "altvertrag" && altvertragClause !== "unknown"
+          ? altTargetYear
+          : valorisationYear,
+    });
+  }, [
+    apartmentType,
+    currentRent,
+    showParallel,
+    showResult,
+    contractDate,
+    lastValorisationDate,
+    effectiveMode,
+    altvertragClause,
+    altTargetYear,
+    valorisationYear,
+  ]);
+
   const reportPayload = useMemo(() => {
     const targetYear =
       effectiveMode === "altvertrag" && altvertragClause !== "unknown"
@@ -397,6 +449,7 @@ export default function RentCalculator() {
       showResult,
       showParallel,
       finalRent: finalRent ?? null,
+      backlog,
     });
   }, [
     effectiveMode,
@@ -423,6 +476,7 @@ export default function RentCalculator() {
     showResult,
     showParallel,
     finalRent,
+    backlog,
   ]);
 
   const pdfFileName = useMemo(() => {
@@ -1581,6 +1635,44 @@ export default function RentCalculator() {
               </div>
             )}
 
+            {backlog && backlog.totalBacklogCents > 0 && apartmentType === "free" && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm sm:p-6">
+                <h2 className="text-lg font-semibold text-emerald-900">
+                  Mögliche rückwirkende Nachforderung bei freiem Mietzins
+                </h2>
+                <p className="mt-2 text-sm text-emerald-900">
+                  Auf Basis Ihrer Angaben könnte Ihr Vermieter bei freiem Mietzins rechnerisch bis zu{" "}
+                  <span className="font-semibold">
+                    {formatEur(backlog.totalBacklogCents)}
+                  </span>{" "}
+                  für die letzten bis zu drei Jahre nachfordern, sofern eine wirksame und transparente
+                  Wertsicherungsklausel vereinbart wurde und die zulässigen Anpassungen tatsächlich
+                  unterblieben sind.
+                </p>
+                {backlog.perYear.length > 0 && (
+                  <div className="mt-3 space-y-1 text-sm text-emerald-900">
+                    {backlog.perYear
+                      .slice()
+                      .sort((a, b) => a.year - b.year)
+                      .map((entry) => (
+                        <p key={entry.year}>
+                          1.4.{entry.year}:{" "}
+                          <span className="font-medium">
+                            {formatEur(entry.backlogCents)}
+                          </span>{" "}
+                          rechnerischer Rückstand.
+                        </p>
+                      ))}
+                  </div>
+                )}
+                <p className="mt-3 text-xs text-emerald-900/80">
+                  Hinweis: Diese Rückstandsberechnung ist eine überschlagsmäßige Orientierungshilfe und ersetzt
+                  keine individuelle rechtliche Beratung. Die tatsächliche Durchsetzbarkeit hängt insbesondere
+                  von der konkreten Vertragsgestaltung und der dreijährigen Verjährungsfrist nach dem ABGB ab.
+                </p>
+              </div>
+            )}
+
             {showParallel && showParallel.steps.length === 0 && (
               <div className="rounded-xl border border-zinc-100 bg-white p-6 shadow">
                 <p className="text-zinc-600">
@@ -1681,6 +1773,24 @@ export default function RentCalculator() {
                 und betrifft sowohl neu abgeschlossene Mietverträge als auch
                 bestehende Altverträge. Die erste mögliche Anpassung nach MieWeG
                 erfolgt zum 1. April 2026.
+              </div>
+            </details>
+            <details className="group">
+              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
+                Kann mein Vermieter bei freiem Mietzins rückwirkend Geld nachfordern?
+                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </summary>
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
+                Bei freiem Mietzins (z.&nbsp;B. Neubauten im Teilanwendungsbereich des MRG) kann der Vermieter
+                unter bestimmten Voraussetzungen eine unterlassene Wertsicherung nachholen. Liegt eine gültige und
+                transparente Wertsicherungsklausel (z.&nbsp;B. an den VPI gekoppelt) vor, können Differenzbeträge
+                grundsätzlich bis zu drei Jahre rückwirkend geltend gemacht werden (allgemeine Verjährungsfrist nach
+                ABGB). Unser Rechner zeigt bei freiem Mietzins einen überschlagsmäßigen Betrag, der rückwirkend
+                nachforderbar sein könnte – die konkrete Durchsetzbarkeit sollte immer rechtlich geprüft werden.
               </div>
             </details>
             <details className="group">
