@@ -203,6 +203,11 @@ export default function RootLayout({
     <html lang="de-AT" className="light">
       <head>
         <StructuredData />
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9500199606572767"
+          crossOrigin="anonymous"
+        ></script>
       </head>
       <body className="antialiased flex min-h-screen flex-col">
         <script

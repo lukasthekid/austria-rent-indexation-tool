@@ -53,8 +53,18 @@ export function SiteFooter() {
             1.1.2026.
           </p>
           <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-zinc-500">
-            <span className="opacity-75">Impressum (in Arbeit)</span>
-            <span className="opacity-75">Datenschutz (in Arbeit)</span>
+            <Link
+              href="/impressum"
+              className="opacity-90 transition-colors hover:text-red-600 hover:underline"
+            >
+              Impressum
+            </Link>
+            <Link
+              href="/datenschutz"
+              className="opacity-90 transition-colors hover:text-red-600 hover:underline"
+            >
+              Datenschutz
+            </Link>
           </div>
         </div>
       </div>
