@@ -143,15 +143,6 @@ function formatPercent(value: number): string {
   return `${value.toFixed(2)} %`;
 }
 
-function formatSignedPercent(value: number): string {
-  const sign = value > 0 ? "+" : "";
-  return `${sign}${value.toFixed(4)} %`;
-}
-
-function toDecimalRate(percent: number): string {
-  return (percent / 100).toFixed(6);
-}
-
 function formatDate(isoOrDate: string): string {
   const date = new Date(isoOrDate);
   if (Number.isNaN(date.getTime())) return isoOrDate;
@@ -169,142 +160,28 @@ function formatIndexValue(value: number | null): string {
   return value.toFixed(3);
 }
 
+function fmtStepRate(
+  rawRate: number,
+  cappedRate: number,
+  aliquotMonths: number,
+  appliedRate: number
+): string {
+  return `raw ${rawRate.toFixed(4)}%, gedeckelt ${cappedRate.toFixed(4)}%, aliquot ${aliquotMonths}/12 -> angewandt ${appliedRate.toFixed(4)}%`;
+}
+
 type Props = {
   payload: CalculationReportPayload;
 };
 
 export default function CalculationReportPdf({ payload }: Props) {
   const isParallel = payload.parallelResult != null;
-  const formulaLines: string[] = [];
-  const auditLines: string[] = [];
-
-  if (payload.miewegResult) {
-    const startRent = payload.inputs.currentRentCents;
-
-    if (payload.miewegResult.multiYearSteps.length > 0) {
-      let previousRent = startRent;
-      payload.miewegResult.multiYearSteps.forEach((step) => {
-        formulaLines.push(
-          `MieWeG ${step.inflationYear}: ${formatEur(previousRent)} × (1 + ${toDecimalRate(
-            step.ratePercent
-          )}) = ${formatEur(step.rentAfterCents)}`
-        );
-        previousRent = step.rentAfterCents;
-      });
-    } else {
-      formulaLines.push(
-        `MieWeG: ${formatEur(startRent)} × (1 + ${toDecimalRate(
-          payload.miewegResult.appliedRatePercent
-        )}) = ${formatEur(payload.miewegResult.newRentCents)}`
-      );
+  const trace = payload.calculationTrace;
+  const vpiAuditLines = trace.vpiDerivation.map((item) => {
+    if (item.unroundedChangePercent == null) {
+      return `VPI ${item.inflationYear}: keine vollstaendigen Jahresdurchschnittswerte (Quelle: ${item.source}).`;
     }
-  }
-
-  if (payload.parallelResult) {
-    let previousActual = payload.inputs.currentRentCents;
-    let previousContract = payload.inputs.currentRentCents;
-    payload.parallelResult.steps.forEach((step) => {
-      if (!step.contractTriggered) {
-        formulaLines.push(
-          `Parallel ${step.year}: keine vertragliche Auslösung -> ${formatEur(
-            previousActual
-          )}`
-        );
-        previousContract = step.vertragRentCents;
-        return;
-      }
-
-      const contractDeltaPercent =
-        previousContract > 0
-          ? ((step.vertragRentCents - previousContract) / previousContract) * 100
-          : 0;
-      formulaLines.push(
-        `Vertragskurve ${step.year}: ${formatEur(previousContract)} × (1 + ${toDecimalRate(
-          contractDeltaPercent
-        )}) = ${formatEur(step.vertragRentCents)}`
-      );
-      const minCandidate = Math.min(step.vertragRentCents, step.miewegRentCents);
-      formulaLines.push(
-        `Parallel ${step.year}: min(Vertrag ${formatEur(
-          step.vertragRentCents
-        )}, MieWeG ${formatEur(step.miewegRentCents)}) = ${formatEur(
-          minCandidate
-        )}`
-      );
-      formulaLines.push(
-        `Parallel ${step.year}: max(Vorjahr ${formatEur(
-          previousActual
-        )}, min-Wert ${formatEur(minCandidate)}) = ${formatEur(
-          step.actualRentCents
-        )}`
-      );
-      previousActual = step.actualRentCents;
-      previousContract = step.vertragRentCents;
-    });
-  }
-
-  const vpiAuditLines = payload.explainability.vpiTrace.map((item) => {
-    if (item.averagePrevYear == null || item.averageCurrentYear == null || item.unroundedChangePercent == null) {
-      return `VPI ${item.inflationYear}: keine vollständigen Jahresdurchschnittswerte verfügbar (Quelle: ${item.source}).`;
-    }
-    return `VPI ${item.inflationYear}: ((${item.averageCurrentYear.toFixed(3)} - ${item.averagePrevYear.toFixed(
-      3
-    )}) / ${item.averagePrevYear.toFixed(3)}) x 100 = ${formatSignedPercent(
-      item.unroundedChangePercent
-    )} (ungerundet, Quelle: ${item.source})`;
+    return `VPI ${item.inflationYear}: ${item.formula} (Quelle: ${item.source})`;
   });
-
-  if (payload.miewegResult) {
-    if (payload.miewegResult.multiYearSteps.length > 0) {
-      let prev = payload.inputs.currentRentCents;
-      payload.miewegResult.multiYearSteps.forEach((step) => {
-        auditLines.push(
-          `1.4.${step.inflationYear + 1}: ${formatEur(prev)} x (1 + ${toDecimalRate(
-            step.ratePercent
-          )}) = ${formatEur(step.rentAfterCents)}`
-        );
-        prev = step.rentAfterCents;
-      });
-    } else {
-      auditLines.push(
-        `MieWeG-Schritt: ${formatEur(payload.inputs.currentRentCents)} x (1 + ${toDecimalRate(
-          payload.miewegResult.appliedRatePercent
-        )}) = ${formatEur(payload.miewegResult.newRentCents)}`
-      );
-    }
-  }
-
-  const parallelAuditLines: string[] = [];
-  if (payload.parallelResult) {
-    let prevActual = payload.inputs.currentRentCents;
-    let prevContract = payload.inputs.currentRentCents;
-    payload.parallelResult.steps.forEach((step) => {
-      parallelAuditLines.push(`1.4.${step.year}: Vertragsausloesung ${step.contractTriggered ? "ja" : "nein"}.`);
-      if (!step.contractTriggered) {
-        parallelAuditLines.push(`  Keine Erhoehung, anwendbare Miete bleibt ${formatEur(prevActual)}.`);
-        prevContract = step.vertragRentCents;
-        return;
-      }
-
-      const contractRate = prevContract > 0 ? ((step.vertragRentCents - prevContract) / prevContract) * 100 : 0;
-      parallelAuditLines.push(
-        `  Vertragskurve: ${formatEur(prevContract)} x (1 + ${toDecimalRate(contractRate)}) = ${formatEur(
-          step.vertragRentCents
-        )}`
-      );
-      parallelAuditLines.push(`  Begrenzungskurve (MieWeG): ${formatEur(step.miewegRentCents)}`);
-      parallelAuditLines.push(
-        `  Vergleich: min(${formatEur(step.vertragRentCents)}, ${formatEur(
-          step.miewegRentCents
-        )}) = ${formatEur(Math.min(step.vertragRentCents, step.miewegRentCents))}`
-      );
-      parallelAuditLines.push(
-        `  Ergebnis fuer 1.4.${step.year}: ${formatEur(step.actualRentCents)} (${step.binding})`
-      );
-      prevActual = step.actualRentCents;
-      prevContract = step.vertragRentCents;
-    });
-  }
 
   return (
     <Document title="MietCheck Berechnungsblatt">
@@ -392,56 +269,47 @@ export default function CalculationReportPdf({ payload }: Props) {
           <Text style={styles.sectionTitle}>
             Rechenschritte {isParallel ? "(Parallelrechnung)" : "(MieWeG)"}
           </Text>
-          {payload.miewegResult && (
+          {trace.miewegSteps.length > 0 && (
             <>
-              <Text style={[styles.listItem, styles.strong]}>MieWeG Breakdown:</Text>
-              {payload.miewegResult.breakdown.map((line, index) => (
-                <Text key={`${line}-${index}`} style={styles.listItem}>
+              <Text style={[styles.listItem, styles.strong]}>MieWeG je Stichtag:</Text>
+              {trace.miewegSteps.map((step) => (
+                <Text key={`${step.valorisationYear}-${step.resultRentCents}`} style={styles.listItem}>
                   <Text style={styles.listPrefix}>- </Text>
-                  {line}
+                  {step.stepLabel}: VPI {step.inflationYear} = {formatPercent(step.rawVpiPercent)}; gedeckelt{" "}
+                  {formatPercent(step.cappedRatePercent)}; Monate {step.aliquotMonths}/12; angewandt{" "}
+                  {formatPercent(step.appliedRatePercent)}; Ergebnis {formatEur(step.resultRentCents)}
                 </Text>
               ))}
-              {payload.miewegResult.multiYearSteps.length > 0 && (
-                <>
-                  <Text style={[styles.listItem, styles.strong]}>
-                    Mehrjahres-Schritte:
-                  </Text>
-                  {payload.miewegResult.multiYearSteps.map((step) => (
-                    <Text
-                      key={`${step.inflationYear}-${step.rentAfterCents}`}
-                      style={styles.listItem}
-                    >
-                      <Text style={styles.listPrefix}>- </Text>
-                      Inflation {step.inflationYear}: {formatPercent(step.ratePercent)}{" -> "}
-                      {formatEur(step.rentAfterCents)}
-                    </Text>
-                  ))}
-                </>
-              )}
             </>
           )}
 
-          {payload.parallelResult && payload.parallelResult.steps.length > 0 && (
+          {trace.parallelSteps.length > 0 && (
             <>
               <Text style={[styles.listItem, styles.strong]}>Parallelrechnung je Jahr:</Text>
-              {payload.parallelResult.steps.map((step) => (
+              {trace.parallelSteps.map((step) => (
                 <Text key={step.year} style={styles.listItem}>
                   <Text style={styles.listPrefix}>- </Text>
-                  {step.year}: Vertrag {formatEur(step.vertragRentCents)}, MieWeG{" "}
-                  {formatEur(step.miewegRentCents)}, maßgeblich{" "}
-                  {formatEur(step.actualRentCents)} ({step.contractTriggered ? step.binding : "keine Erhöhung"})
+                  {step.year}: Vertrag {formatEur(step.contractRentCents)}, MieWeG{" "}
+                  {formatEur(step.controlRentCents)}, min {formatEur(step.minCandidateCents)}, maßgeblich{" "}
+                  {formatEur(step.resultActualRentCents)} ({step.contractTriggered ? step.binding : "keine Erhoehung"})
                 </Text>
               ))}
             </>
           )}
         </View>
 
-        {formulaLines.length > 0 && (
+        {trace.miewegSteps.length + trace.parallelSteps.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Formeln der Berechnung</Text>
-            {formulaLines.map((line, index) => (
-              <Text key={`${line}-${index}`} style={styles.formulaLine}>
-                {index + 1}. {line}
+            {trace.miewegSteps.map((step, index) => (
+              <Text key={`mieweg-formula-${step.valorisationYear}`} style={styles.formulaLine}>
+                {index + 1}. {step.stepLabel}: {step.formula}
+              </Text>
+            ))}
+            {trace.parallelSteps.map((step, index) => (
+              <Text key={`parallel-formula-${step.year}`} style={styles.formulaLine}>
+                {trace.miewegSteps.length + index + 1}. 1.4.{step.year}:{" "}
+                {step.lines.join(" | ")}
               </Text>
             ))}
           </View>
@@ -563,23 +431,23 @@ export default function CalculationReportPdf({ payload }: Props) {
           ))}
         </View>
 
-        {auditLines.length > 0 && (
+        {trace.miewegSteps.length > 0 && (
           <View style={styles.auditBlock}>
             <Text style={styles.auditTitle}>3) MieWeG-Rechnung mit konkreten Zahlen</Text>
-            {auditLines.map((line, i) => (
-              <Text key={`mieweg-audit-${i}`} style={styles.auditLine}>
-                {i + 1}. {line}
+            {trace.miewegSteps.map((step, i) => (
+              <Text key={`mieweg-audit-${step.valorisationYear}`} style={styles.auditLine}>
+                {i + 1}. {step.stepLabel}: VPI {step.inflationYear} {fmtStepRate(step.rawVpiPercent, step.cappedRatePercent, step.aliquotMonths, step.appliedRatePercent)}; {step.formula}
               </Text>
             ))}
           </View>
         )}
 
-        {parallelAuditLines.length > 0 && (
+        {trace.parallelSteps.length > 0 && (
           <View style={styles.auditBlock}>
             <Text style={styles.auditTitle}>4) Parallelrechnung pro Stichtag 1. April</Text>
-            {parallelAuditLines.map((line, i) => (
-              <Text key={`parallel-audit-${i}`} style={styles.auditLine}>
-                {line}
+            {trace.parallelSteps.map((step) => (
+              <Text key={`parallel-audit-${step.year}`} style={styles.auditLine}>
+                1.4.{step.year}: {step.lines.join(" | ")}
               </Text>
             ))}
           </View>

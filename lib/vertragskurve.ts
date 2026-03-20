@@ -66,18 +66,15 @@ export function calculateVpiAnnualCurve(
   let rentCents = baseRentCents;
   const refYear = referenceDate.getFullYear();
   const refMonth = referenceDate.getMonth();
+  const firstTriggerYear = params.adjustmentMonth > refMonth ? refYear : refYear + 1;
+  const effectiveYearForTrigger = (triggerYear: number) =>
+    params.adjustmentMonth <= 3 ? triggerYear : triggerYear + 1;
+  let nextTriggerYear = firstTriggerYear;
 
   for (let valorisationYear = startYear; valorisationYear <= endYear; valorisationYear++) {
-    // Months 0–3 (Jan–Apr): adjustment falls on or before April 1 → same valorisation year.
-    // Months 4–11 (May–Dec): adjustment falls after April 1 → shifts to next April 1 (prior year).
-    const contractAdjustmentYear =
-      params.adjustmentMonth <= 3 ? valorisationYear : valorisationYear - 1;
-
-    const hasPassedRef =
-      contractAdjustmentYear > refYear ||
-      (contractAdjustmentYear === refYear && params.adjustmentMonth > refMonth);
-
-    if (!hasPassedRef) {
+    // Process pending contract triggers in sequence, so missed pre-2026 triggers
+    // are carried forward (frozen at their own trigger-date level) to the next April step.
+    if (effectiveYearForTrigger(nextTriggerYear) > valorisationYear) {
       steps.push({
         year: valorisationYear,
         contractTriggered: false,
@@ -86,7 +83,7 @@ export function calculateVpiAnnualCurve(
       continue;
     }
 
-    const inflationYear = contractAdjustmentYear - 1;
+    const inflationYear = nextTriggerYear - 1;
     const vpiChange =
       vpiOverrideByYear?.[inflationYear] ??
       getVpiChangeForYear(inflationYear, params.vpiBase) ??
@@ -102,6 +99,7 @@ export function calculateVpiAnnualCurve(
       triggerMonth: params.adjustmentMonth,
       increasePercent: vpiChange,
     });
+    nextTriggerYear++;
   }
 
   return steps;

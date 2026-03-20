@@ -90,18 +90,23 @@ export function calculateParallelrechnung(
     vpiOverrideByYear,
   });
   const begrenzungByYear = new Map(begrenzungSteps.map((step) => [step.year, step]));
+  let controlTriggerIndex = 0;
 
   const steps: ParallelrechnungStep[] = [];
   let actualRentCents = baseRentCents;
 
   for (let i = 0; i < vertragSteps.length; i++) {
     const vStep = vertragSteps[i];
-    const bStep = begrenzungByYear.get(vStep.year);
+    if (!vStep) break;
 
-    if (!vStep || !bStep) break;
-
+    // For triggered steps, bind control values to trigger sequence (not calendar year),
+    // so a missed pre-2026 trigger is compared against its corresponding control year.
+    const triggerControlStep = begrenzungSteps[controlTriggerIndex];
+    const yearControlStep = begrenzungByYear.get(vStep.year);
+    const miewegRent = vStep.contractTriggered
+      ? (triggerControlStep?.rentCents ?? yearControlStep?.rentCents ?? actualRentCents)
+      : (yearControlStep?.rentCents ?? actualRentCents);
     const vertragRent = vStep.contractRentCents;
-    const miewegRent = bStep.rentCents;
 
     if (!vStep.contractTriggered) {
       steps.push({
@@ -114,6 +119,7 @@ export function calculateParallelrechnung(
       });
       continue;
     }
+    controlTriggerIndex++;
 
     const newActual = Math.min(vertragRent, miewegRent);
     actualRentCents = Math.max(actualRentCents, newActual);

@@ -1,4 +1,11 @@
-import type { ApartmentType, MieWeGResult } from "./mieweg";
+import {
+  calculateBegrenzungskurve,
+  computeRateForYear,
+  getFirstIndexationDate,
+  getFullMonthsInPriorYear,
+  type ApartmentType,
+  type MieWeGResult,
+} from "./mieweg";
 import type {
   ParallelrechnungResult,
   ParallelrechnungStep,
@@ -58,6 +65,50 @@ export interface CalculationReportPayload {
       unroundedChangePercent: number | null;
       source: "official" | "estimate" | "custom";
     }>;
+  };
+  calculationTrace: {
+    inputsSnapshot: {
+      startRentCents: number;
+      referenceDate: string;
+      targetDate: string;
+      clauseDetails: Array<{ label: string; value: string }>;
+    };
+    vpiDerivation: Array<{
+      inflationYear: number;
+      averagePrevYear: number | null;
+      averageCurrentYear: number | null;
+      unroundedChangePercent: number | null;
+      source: "official" | "estimate" | "custom";
+      formula: string;
+    }>;
+    miewegSteps: Array<{
+      stepLabel: string;
+      inflationYear: number;
+      valorisationYear: number;
+      previousRentCents: number;
+      rawVpiPercent: number;
+      cappedRatePercent: number;
+      aliquotMonths: number;
+      appliedRatePercent: number;
+      resultRentCents: number;
+      formula: string;
+    }>;
+    parallelSteps: Array<{
+      year: number;
+      contractTriggered: boolean;
+      previousActualRentCents: number;
+      contractRentCents: number;
+      controlRentCents: number;
+      minCandidateCents: number;
+      resultActualRentCents: number;
+      binding: "vertrag" | "mieweg" | "equal" | "none";
+      lines: string[];
+    }>;
+    finalCheck: {
+      finalAllowedRentCents: number;
+      totalChangePercent: number;
+      formula: string;
+    };
   };
   miewegResult?: {
     newRentCents: number;
@@ -223,6 +274,176 @@ function buildVpiTrace(
   });
 }
 
+function parseDateInput(value: string): Date | null {
+  if (!value.trim()) return null;
+  const [y, m, d] = value.split("-").map(Number);
+  const date = new Date(y, (m ?? 1) - 1, d ?? 1);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function fmtPct(value: number): string {
+  return `${value.toFixed(4)}%`;
+}
+
+function buildCalculationTrace(
+  input: BuildCalculationReportPayloadInput,
+  currentRentCents: number,
+  finalRentCents: number,
+  totalChangePercent: number
+): CalculationReportPayload["calculationTrace"] {
+  const clauseDetails = buildClauseDetails(input);
+  const referenceDateObj =
+    parseDateInput(input.altLastValorisationDate) ??
+    parseDateInput(input.lastValorisationDate) ??
+    parseDateInput(input.contractDate) ??
+    new Date();
+  const referenceDate = `${referenceDateObj.getFullYear()}-${String(referenceDateObj.getMonth() + 1).padStart(2, "0")}-${String(referenceDateObj.getDate()).padStart(2, "0")}`;
+  const targetDate = `1.4.${input.targetYear}`;
+  const vpiDerivation = buildVpiTrace(input).map((item) => ({
+    ...item,
+    formula:
+      item.averagePrevYear != null &&
+      item.averageCurrentYear != null &&
+      item.unroundedChangePercent != null
+        ? `((${item.averageCurrentYear.toFixed(3)} - ${item.averagePrevYear.toFixed(3)}) / ${item.averagePrevYear.toFixed(3)}) * 100 = ${item.unroundedChangePercent.toFixed(4)}%`
+        : `Keine vollstaendigen Jahresdurchschnittswerte fuer ${item.inflationYear}.`,
+  }));
+
+  const miewegSteps: CalculationReportPayload["calculationTrace"]["miewegSteps"] = [];
+  const customOverride =
+    input.usedCustomVpi ? { [input.inflationYear]: input.vpiPercent } : undefined;
+
+  if (input.showResult) {
+    const multiYearSteps = input.showResult.multiYearSteps ?? [];
+    if (multiYearSteps.length > 0) {
+      let previousRent = currentRentCents;
+      multiYearSteps.forEach((step, index) => {
+        const valorisationYear = step.inflationYear + 1;
+        const rawVpi =
+          (input.usedCustomVpi && step.inflationYear === input.inflationYear
+            ? input.vpiPercent
+            : getVpiChangeForYear(step.inflationYear)) ?? step.ratePercent;
+        const cappedRate = computeRateForYear(rawVpi, valorisationYear, input.apartmentType);
+        const aliquotMonths =
+          index === 0 && !input.alreadyInMieWeG
+            ? getFullMonthsInPriorYear(valorisationYear, referenceDateObj)
+            : 12;
+        const appliedRate =
+          index === 0 && aliquotMonths < 12 && !input.alreadyInMieWeG
+            ? (cappedRate * aliquotMonths) / 12
+            : cappedRate;
+        miewegSteps.push({
+          stepLabel: `1.4.${valorisationYear}`,
+          inflationYear: step.inflationYear,
+          valorisationYear,
+          previousRentCents: previousRent,
+          rawVpiPercent: rawVpi,
+          cappedRatePercent: cappedRate,
+          aliquotMonths,
+          appliedRatePercent: appliedRate,
+          resultRentCents: step.rentAfterCents,
+          formula: `${(previousRent / 100).toFixed(2)} * (1 + ${fmtPct(appliedRate)}) = ${(step.rentAfterCents / 100).toFixed(2)}`,
+        });
+        previousRent = step.rentAfterCents;
+      });
+    } else {
+      const inflationYear = input.targetYear - 1;
+      const rawVpi = input.vpiPercent;
+      const cappedRate = computeRateForYear(rawVpi, input.targetYear, input.apartmentType);
+      const firstIndexationYear = getFirstIndexationDate(referenceDateObj).getFullYear();
+      const applyAliquot = !input.alreadyInMieWeG && input.targetYear === firstIndexationYear;
+      const aliquotMonths = applyAliquot
+        ? getFullMonthsInPriorYear(input.targetYear, referenceDateObj)
+        : 12;
+      const appliedRate =
+        applyAliquot && aliquotMonths < 12
+          ? (cappedRate * aliquotMonths) / 12
+          : cappedRate;
+      const resultRentCents = input.showResult.newRentCents;
+      miewegSteps.push({
+        stepLabel: `1.4.${input.targetYear}`,
+        inflationYear,
+        valorisationYear: input.targetYear,
+        previousRentCents: currentRentCents,
+        rawVpiPercent: rawVpi,
+        cappedRatePercent: cappedRate,
+        aliquotMonths,
+        appliedRatePercent: appliedRate,
+        resultRentCents,
+        formula: `${(currentRentCents / 100).toFixed(2)} * (1 + ${fmtPct(appliedRate)}) = ${(resultRentCents / 100).toFixed(2)}`,
+      });
+    }
+  }
+
+  const parallelSteps: CalculationReportPayload["calculationTrace"]["parallelSteps"] = [];
+  if (input.showParallel && input.showParallel.steps.length > 0) {
+    const controlStartYear = referenceDateObj.getFullYear() + 1;
+    const controlCurve = calculateBegrenzungskurve({
+      baseRentCents: currentRentCents,
+      referenceDate: referenceDateObj,
+      apartmentType: input.apartmentType,
+      startYear: controlStartYear,
+      endYear: input.targetYear,
+      vpiOverrideByYear: customOverride,
+    });
+    const controlByYear = new Map(controlCurve.map((step) => [step.year, step]));
+    let previousActual = currentRentCents;
+    let triggerControlIndex = 0;
+
+    input.showParallel.steps.forEach((step) => {
+      const triggerControl = controlCurve[triggerControlIndex];
+      const yearControl = controlByYear.get(step.year);
+      const controlValue = step.contractTriggered
+        ? (triggerControl?.rentCents ?? yearControl?.rentCents ?? step.miewegRentCents)
+        : (yearControl?.rentCents ?? step.miewegRentCents);
+      const minCandidate = Math.min(step.vertragRentCents, controlValue);
+      const lines = step.contractTriggered
+        ? [
+            `Vertragskurve: ${formatEuro(previousActual)} -> ${formatEuro(step.vertragRentCents)}`,
+            `Begrenzungskurve: ${formatEuro(controlValue)}`,
+            `min(Vertrag, MieWeG) = ${formatEuro(minCandidate)}`,
+            `max(Vorjahresmiete, min-Wert) = ${formatEuro(step.actualRentCents)}`,
+          ]
+        : [`Keine vertragliche Ausloesung, Miete bleibt ${formatEuro(previousActual)}.`];
+
+      parallelSteps.push({
+        year: step.year,
+        contractTriggered: step.contractTriggered,
+        previousActualRentCents: previousActual,
+        contractRentCents: step.vertragRentCents,
+        controlRentCents: controlValue,
+        minCandidateCents: minCandidate,
+        resultActualRentCents: step.actualRentCents,
+        binding: step.binding,
+        lines,
+      });
+      if (step.contractTriggered) triggerControlIndex++;
+      previousActual = step.actualRentCents;
+    });
+  }
+
+  return {
+    inputsSnapshot: {
+      startRentCents: currentRentCents,
+      referenceDate,
+      targetDate,
+      clauseDetails,
+    },
+    vpiDerivation,
+    miewegSteps,
+    parallelSteps,
+    finalCheck: {
+      finalAllowedRentCents: finalRentCents,
+      totalChangePercent,
+      formula: `${(currentRentCents / 100).toFixed(2)} -> ${(finalRentCents / 100).toFixed(2)} (${totalChangePercent.toFixed(4)}%)`,
+    },
+  };
+}
+
+function formatEuro(cents: number): string {
+  return `${(cents / 100).toFixed(2)} EUR`;
+}
+
 export function buildCalculationReportPayload(
   input: BuildCalculationReportPayloadInput
 ): CalculationReportPayload | null {
@@ -310,6 +531,12 @@ export function buildCalculationReportPayload(
       ],
       vpiTrace: buildVpiTrace(input),
     },
+    calculationTrace: buildCalculationTrace(
+      input,
+      currentRentCents,
+      input.finalRent,
+      totalChangePercent
+    ),
     miewegResult: input.showResult
       ? {
           newRentCents: input.showResult.newRentCents,
