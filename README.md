@@ -78,7 +78,17 @@ npm run lint     # ESLint
 
 VPI-Daten stammen von **Statistik Austria** und müssen periodisch aktualisiert werden.
 
-### Ablauf
+### Automatisierung (empfohlen)
+
+Wenn das Repo auf **GitHub** liegt, läuft [`.github/workflows/update-vpi.yml`](.github/workflows/update-vpi.yml) **wöchentlich** (Montag 06:15 UTC) und bei manueller Auslösung unter **Actions → Update VPI data → Run workflow**.  
+Das Script committet `lib/vpi-data-generated.ts` nur bei Änderungen; **Vercel** baut nach dem Push automatisch neu.
+
+Hinweise:
+
+- Unter **Settings → Actions → General** muss „Workflow permissions“ mindestens **Read and write** erlauben (damit `GITHUB_TOKEN` pushen darf).
+- **Branch protection** auf `main`: entweder Pushes von `github-actions[bot]` erlauben oder den Workflow auf einen PR-basierten Flow umstellen.
+
+### Manuell
 
 `npm run update-vpi` lädt die ODS-Datei von Statistik Austria und erzeugt `lib/vpi-data-generated.ts`.
 

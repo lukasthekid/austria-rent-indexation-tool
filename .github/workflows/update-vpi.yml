@@ -1,0 +1,48 @@
+# Weekly refresh of lib/vpi-data-generated.ts from Statistik Austria ODS.
+# Vercel deploys on push to the default branch — no Vercel cron needed.
+
+name: Update VPI data
+
+on:
+  schedule:
+    # Mondays 06:15 UTC (~07:15 CET). Adjust if you prefer another day/time.
+    - cron: "15 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-vpi
+  cancel-in-progress: true
+
+jobs:
+  update-vpi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download ODS and regenerate vpi-data-generated.ts
+        run: npm run update-vpi
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/vpi-data-generated.ts
+          if git diff --cached --quiet; then
+            echo "No changes to VPI data (already up to date)."
+            exit 0
+          fi
+          git commit -m "chore(data): refresh VPI from Statistik Austria ODS"
+          git push
