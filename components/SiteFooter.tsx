@@ -1,5 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
+import {
+  SITE_DISCLAIMER_ADVICE,
+  SITE_DISCLAIMER_MAIN,
+  SITE_DISCLAIMER_NO_WARRANTY,
+  SITE_LINK_RIS,
+  SITE_LINK_RIS_LABEL,
+  SITE_LINK_VPI,
+  SITE_LINK_VPI_LABEL,
+  SITE_SOURCES_DATA,
+  SITE_SOURCES_LEGAL,
+} from "@/lib/site-trust-copy";
 
 const navLinks = [
   { href: "/", label: "Start" },
@@ -42,17 +53,40 @@ export function SiteFooter() {
         </div>
       </div>
 
-      {/* Unterer Bereich: Haftungsausschluss + rechtliche Hinweise */}
+      {/* Unterer Bereich: Trust, Quellen, Haftung (einheitlich mit Rechner/PDF) */}
       <div className="border-t border-zinc-200 bg-zinc-50/80 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <p className="text-xs leading-relaxed text-zinc-600">
-            Diese Seite dient der allgemeinen Information und ersetzt keine
-            Rechtsberatung. Im Einzelfall empfiehlt sich die Beratung durch die
-            Mietervereinigung Österreich oder einen Fachanwalt für Mietrecht.
-            Basis: MieWeG (BGBl.&nbsp;I 2025), 5.&nbsp;MILG, in Kraft ab
-            1.1.2026.
+        <div className="mx-auto max-w-5xl space-y-3 text-xs leading-relaxed text-zinc-600">
+          <p>
+            <span className="font-medium text-zinc-700">Hinweis: </span>
+            {SITE_DISCLAIMER_MAIN} {SITE_DISCLAIMER_NO_WARRANTY}
           </p>
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-zinc-500">
+          <p>{SITE_DISCLAIMER_ADVICE}</p>
+          <p>
+            <span className="font-medium text-zinc-700">Quellen: </span>
+            {SITE_SOURCES_LEGAL} {SITE_SOURCES_DATA}
+          </p>
+          <p className="text-zinc-500">
+            <a
+              href={SITE_LINK_RIS}
+              className="text-red-700 underline underline-offset-2 hover:text-red-800"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {SITE_LINK_RIS_LABEL}
+            </a>
+            <span aria-hidden className="mx-1.5 text-zinc-400">
+              ·
+            </span>
+            <a
+              href={SITE_LINK_VPI}
+              className="text-red-700 underline underline-offset-2 hover:text-red-800"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {SITE_LINK_VPI_LABEL}
+            </a>
+          </p>
+          <div className="flex flex-wrap gap-x-6 gap-y-1 border-t border-zinc-200/80 pt-3 text-zinc-500">
             <Link
               href="/impressum"
               className="opacity-90 transition-colors hover:text-red-600 hover:underline"

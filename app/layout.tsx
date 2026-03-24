@@ -9,7 +9,7 @@ import "./globals.css";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://mietcheck-at.vercel.app";
 const title = "MietCheck-AT | Rechner für Mietpreisbremse & MieWeG 2026 Österreich";
 const description =
-  "Kostenloser Rechner: Prüfe, ob deine Mieterhöhung 2026 nach dem neuen MieWeG legal ist. Für Altvertrag & Neuvertrag – 3%-Deckelung, April-Valorisierung, Parallelrechnung.";
+  "Kostenloser Rechner: Mieterhöhung 2026 nach MieWeG einordnen (Alt- und Neuvertrag). 3%-Kappung, April-Valorisierung, Parallelrechnung. Orientierung an Gesetz und VPI (Statistik Austria); keine Rechtsberatung.";
 
 export const metadata: Metadata = {
   title: {
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     "Mieterhöhung 2026 Österreich",
     "Mieterhöhung berechnen",
     "Mieterhöhung berechnen Österreich",
-    "Mieterhöhung legal prüfen",
+    "Mieterhöhung MieWeG prüfen",
     "Mietpreisbremse Österreich",
     "Mietpreisbremse 2026",
     "MieWeG 2026",
@@ -84,7 +84,7 @@ const howToSchema = {
   "@id": `${SITE_URL}/#howto`,
   name: "Mieterhöhung nach MieWeG berechnen und prüfen",
   description:
-    "In 3 Schritten prüfen, ob Ihre Mieterhöhung in Österreich nach dem Mieten-Wertsicherungsgesetz (MieWeG) zulässig ist.",
+    "In drei Schritten eine Orientierung, ob Ihre Mieterhöhung in Österreich nach dem MieWeG voraussichtlich zu Ihren Angaben passt – keine Rechtsberatung.",
   step: [
     {
       "@type": "HowToStep",
@@ -102,7 +102,7 @@ const howToSchema = {
       "@type": "HowToStep",
       position: 3,
       name: "Ergebnis ablesen",
-      text: "Der Rechner zeigt die maximal zulässige Mieterhöhung nach MieWeG und einen direkten Vergleich mit dem Vermieter-Angebot.",
+      text: "Der Rechner zeigt eine Orientierung zur MieWeG-Obergrenze und einen Vergleich mit dem Vermieter-Angebot; im Zweifel Fachberatung einholen.",
     },
   ],
 };
@@ -116,7 +116,7 @@ const jsonLd = {
       "@id": `${SITE_URL}/#webapp`,
       name: "MietCheck-AT MieWeG Rechner",
       description:
-        "Kostenloser Online-Rechner zur Prüfung von Mietzinserhöhungen nach dem österreichischen Mieten-Wertsicherungsgesetz (MieWeG).",
+        "Kostenloser Online-Rechner zur Orientierung bei Mietzinserhöhungen nach dem österreichischen MieWeG (MRG); VPI von Statistik Austria. Keine Rechtsberatung.",
       url: SITE_URL,
       applicationCategory: "FinanceApplication",
       operatingSystem: "Any",

@@ -11,6 +11,7 @@ import type {
   ParallelrechnungStep,
 } from "./parallelrechnung";
 import type { BacklogResult } from "./rueckforderung";
+import { SITE_PDF_DISCLAIMERS } from "./site-trust-copy";
 import { getVpiAverageForYear, getVpiChangeForYear } from "./vpi-data";
 
 export type ContractMode = "neuvertrag" | "altvertrag";
@@ -553,10 +554,6 @@ export function buildCalculationReportPayload(
           steps: input.showParallel.steps,
         }
       : undefined,
-    disclaimers: [
-      "Die Berechnungen dienen ausschließlich der Orientierung und ersetzen keine individuelle Rechtsberatung.",
-      "Es wird keine Gewähr für rechtliche Richtigkeit, Vollständigkeit oder Aktualität übernommen.",
-      "Nicht erfasst: Mietverträge nach dem WGG (außer § 13 Abs 4), Geschäftsraummieten und Voll-Ausnahmen vom MRG.",
-    ],
+    disclaimers: [...SITE_PDF_DISCLAIMERS],
   };
 }

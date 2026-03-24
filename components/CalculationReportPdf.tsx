@@ -378,23 +378,12 @@ export default function CalculationReportPdf({ payload }: Props) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Hinweise</Text>
+          <Text style={styles.sectionTitle}>Hinweise und Haftungsausschluss</Text>
           {payload.disclaimers.map((line, index) => (
             <Text style={styles.disclaimer} key={`${line}-${index}`}>
               - {line}
             </Text>
           ))}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Haftungsausschluss</Text>
-          <Text style={styles.disclaimer}>
-            Die Berechnungen dieses Rechners dienen ausschließlich der Vereinfachung und Orientierung. Es wird
-            keine Garantie für die rechtliche Richtigkeit, Vollständigkeit oder Aktualität der Angaben übernommen.
-            Insbesondere ersetzen die Ergebnisse keine individuelle Prüfung durch eine sachkundige Person.
-            Nutzer:innen sollten die Berechnungen stets selbst überprüfen oder rechtlichen Rat einholen, bevor sie
-            Entscheidungen treffen oder Zahlungen anpassen.
-          </Text>
         </View>
 
         <Text style={styles.footer}>

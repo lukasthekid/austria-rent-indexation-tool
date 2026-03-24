@@ -7,7 +7,7 @@ const SITE_URL =
 export const metadata: Metadata = {
   title: "Mietpreisbremse Österreich 2026 – Erklärung & kostenloser Rechner",
   description:
-    "Was ist die Mietpreisbremse in Österreich? So funktioniert die MieWeG-Deckelung 2026: Wer ist betroffen, wie wird berechnet und was tun bei illegaler Mieterhöhung.",
+    "Was ist die Mietpreisbremse in Österreich? MieWeG-Deckelung 2026: Wer ist betroffen, wie wird berechnet und was tun bei unzulässiger Mieterhöhung? Orientierung, keine Rechtsberatung.",
   openGraph: {
     title:
       "Mietpreisbremse Österreich 2026 – Erklärung & kostenloser Rechner | MietCheck-AT",

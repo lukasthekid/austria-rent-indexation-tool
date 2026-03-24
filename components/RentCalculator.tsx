@@ -40,6 +40,19 @@ import {
 } from "recharts";
 import CalculationReportPdf from "@/components/CalculationReportPdf";
 import { buildCalculationReportPayload } from "@/lib/report-payload";
+import {
+  SITE_DISCLAIMER_ADVICE,
+  SITE_DISCLAIMER_MAIN,
+  SITE_DISCLAIMER_NO_WARRANTY,
+  SITE_LINK_RIS,
+  SITE_LINK_RIS_LABEL,
+  SITE_LINK_VPI,
+  SITE_LINK_VPI_LABEL,
+  SITE_SCOPE_LIMITS,
+  SITE_SOURCES_DATA,
+  SITE_SOURCES_LEGAL,
+  SITE_TRUST_TAGLINE,
+} from "@/lib/site-trust-copy";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MIN_VALORISATION_YEAR = 2026;
@@ -170,6 +183,14 @@ function AliquotierungTimeline({
 }
 
 type WizardStep = "grunddaten" | "vertragsart" | "details" | "ergebnis";
+
+const WIZARD_STEP_ORDER: WizardStep[] = [
+  "vertragsart",
+  "grunddaten",
+  "details",
+  "ergebnis",
+];
+
 type ContractMode = "neuvertrag" | "altvertrag";
 type AltvertragClause = ClauseType | "unknown";
 
@@ -352,6 +373,41 @@ export default function RentCalculator() {
     currentRent !== "" &&
     parseFloat(currentRent) > 0 &&
     contractDate.trim() !== "";
+
+  const canProceedFromStep3 =
+    effectiveMode === "altvertrag" && altvertragClause !== "unknown"
+      ? parallelResult != null
+      : neuvertragResult != null && Number.isFinite(vpiPercent);
+
+  const isStepUnlocked = (target: WizardStep): boolean => {
+    const idx = WIZARD_STEP_ORDER.indexOf(target);
+    for (let i = 0; i <= idx; i++) {
+      const s = WIZARD_STEP_ORDER[i];
+      const ok =
+        s === "vertragsart" ||
+        (s === "grunddaten" && canProceedFromStep1) ||
+        (s === "details" &&
+          canProceedFromStep1 &&
+          canProceedFromStep2) ||
+        (s === "ergebnis" &&
+          canProceedFromStep1 &&
+          canProceedFromStep2 &&
+          canProceedFromStep3);
+      if (!ok) return false;
+    }
+    return true;
+  };
+
+  const canNavigateToStep = (target: WizardStep): boolean => {
+    const ti = WIZARD_STEP_ORDER.indexOf(target);
+    const ci = WIZARD_STEP_ORDER.indexOf(step);
+    if (ti <= ci) return true;
+    return isStepUnlocked(target);
+  };
+
+  const goToStep = (target: WizardStep) => {
+    if (canNavigateToStep(target)) setStep(target);
+  };
 
   const showResult =
     effectiveMode === "neuvertrag" || altvertragClause === "unknown"
@@ -598,19 +654,20 @@ export default function RentCalculator() {
       : null;
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-zinc-50 font-sans">
-      <main className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <div className="overflow-x-hidden bg-zinc-50 font-sans">
+      <main className="mx-auto max-w-2xl px-4 pb-8 pt-2 sm:px-6 sm:pb-10 sm:pt-3 lg:px-8">
         <header className="mb-6 flex flex-col gap-3 border-b border-zinc-200 pb-6 sm:mb-8 sm:gap-4 sm:pb-8">
-          <h1 className="text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl">
-            Ihr Vermieter hat die Miete erhöht? Prüfen Sie hier, ob die Erhöhung legal ist.
-          </h1>
+          <h2 className="text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl">
+            Schritt für Schritt: Eingaben für die MieWeG-Orientierungsrechnung
+          </h2>
           <p className="text-base text-zinc-600 sm:text-lg">
-            Das neue Mieten-Wertsicherungsgesetz (MieWeG) begrenzt seit 1. Jänner 2026,
-            wie stark die Miete steigen darf. Geben Sie Ihre Daten ein – unser Rechner zeigt
-            die maximal zulässige Miete.
+            Das Mieten-Wertsicherungsgesetz (MieWeG) begrenzt seit 1. Jänner 2026, wie
+            stark eine vertraglich vereinbarte Wertsicherung die Miete anheben darf.
+            Tragen Sie Ihre Daten ein – der Rechner zeigt eine nachvollziehbare
+            Orientierung zur maximal zulässigen Anpassung nach Ihren Angaben.
           </p>
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 sm:text-base">
-            <p className="font-medium">Kein Rechtsexperte nötig – der Rechner führt Sie Schritt für Schritt.</p>
+            <p className="font-medium">{SITE_TRUST_TAGLINE}</p>
           </div>
         </header>
 
@@ -636,12 +693,19 @@ export default function RentCalculator() {
                   />
                 )}
                 <button
-                  onClick={() => setStep(s)}
-                    className={`flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 transition-colors sm:min-h-0 sm:rounded-md sm:px-2 sm:py-1 ${
+                  type="button"
+                  onClick={() => goToStep(s)}
+                  disabled={!canNavigateToStep(s)}
+                  title={
+                    !canNavigateToStep(s)
+                      ? "Schließen Sie die vorherigen Schritte ab, um hierher zu springen."
+                      : undefined
+                  }
+                  className={`flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 transition-colors sm:min-h-0 sm:rounded-md sm:px-2 sm:py-1 ${
                     step === s
                       ? "bg-red-50 font-semibold text-red-700"
                       : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
-                  }`}
+                  } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent`}
                 >
                   <span
                         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-medium sm:h-5 sm:w-5 ${
@@ -928,17 +992,12 @@ export default function RentCalculator() {
               </>
             )}
 
-            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+            <div className="flex justify-end">
               <button
-                onClick={() => setStep("grunddaten")}
-                className="min-h-[44px] rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:py-2.5"
-              >
-                Zurück
-              </button>
-              <button
-                onClick={() => setStep("grunddaten")}
+                type="button"
+                onClick={() => goToStep("grunddaten")}
                 disabled={!canProceedFromStep1}
-                className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-2.5"
+                className="min-h-[44px] w-full rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:w-auto sm:py-2.5"
               >
                 Weiter
               </button>
@@ -1043,13 +1102,15 @@ export default function RentCalculator() {
             </div>
             <div className="flex flex-col-reverse gap-3 sm:flex-row">
               <button
-                onClick={() => setStep("vertragsart")}
+                type="button"
+                onClick={() => goToStep("vertragsart")}
                 className="min-h-[44px] rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:py-2.5"
               >
                 Zurück
               </button>
               <button
-                onClick={() => setStep("details")}
+                type="button"
+                onClick={() => goToStep("details")}
                 disabled={!canProceedFromStep2}
                 className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-2.5"
               >
@@ -1413,14 +1474,22 @@ export default function RentCalculator() {
 
             <div className="flex flex-col-reverse gap-3 sm:flex-row">
               <button
-                onClick={() => setStep("grunddaten")}
+                type="button"
+                onClick={() => goToStep("grunddaten")}
                 className="min-h-[44px] rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:py-2.5"
               >
                 Zurück
               </button>
               <button
-                onClick={() => setStep("ergebnis")}
-                className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800 sm:min-h-0 sm:py-2.5"
+                type="button"
+                onClick={() => goToStep("ergebnis")}
+                disabled={!canProceedFromStep3}
+                title={
+                  !canProceedFromStep3
+                    ? "Ergänzen Sie die Pflichtfelder in diesem Schritt (z. B. Basis-Indexwert bei Schwellenwert-Klausel)."
+                    : undefined
+                }
+                className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-2.5"
               >
                 Berechnen
               </button>
@@ -1666,9 +1735,9 @@ export default function RentCalculator() {
                   </div>
                 )}
                 <p className="mt-3 text-xs text-emerald-900/80">
-                  Hinweis: Diese Rückstandsberechnung ist eine überschlagsmäßige Orientierungshilfe und ersetzt
-                  keine individuelle rechtliche Beratung. Die tatsächliche Durchsetzbarkeit hängt insbesondere
-                  von der konkreten Vertragsgestaltung und der dreijährigen Verjährungsfrist nach dem ABGB ab.
+                  Hinweis: Überschlagsmäßige Orientierung; ersetzt keine
+                  Rechtsberatung. Durchsetzbarkeit hängt von Vertrag und u. a.
+                  der Verjährung nach ABGB ab.
                 </p>
               </div>
             )}
@@ -1739,7 +1808,8 @@ export default function RentCalculator() {
             )}
 
             <button
-              onClick={() => setStep("details")}
+              type="button"
+              onClick={() => goToStep("details")}
               className="w-full min-h-[44px] rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:py-2.5"
             >
               Zurück zu Details
@@ -1747,139 +1817,40 @@ export default function RentCalculator() {
           </section>
         )}
 
-        {/* FAQ für SEO – Accordion mit details/summary + Tailwind */}
-        <section
-          className="mt-10 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm sm:mt-12"
-          aria-labelledby="faq-heading"
-        >
-          <h2
-            id="faq-heading"
-            className="border-b border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-semibold text-zinc-900 sm:px-6 sm:py-4 sm:text-lg"
-          >
-            Häufige Fragen zum MieWeG
-          </h2>
-          <div className="divide-y divide-zinc-200">
-            <details className="group">
-              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
-                Ab wann gilt das neue MieWeG?
-                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </span>
-              </summary>
-              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
-                Das Mieten-Wertsicherungsgesetz (MieWeG) gilt ab 1. Jänner 2026
-                und betrifft sowohl neu abgeschlossene Mietverträge als auch
-                bestehende Altverträge. Die erste mögliche Anpassung nach MieWeG
-                erfolgt zum 1. April 2026.
-              </div>
-            </details>
-            <details className="group">
-              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
-                Kann mein Vermieter bei freiem Mietzins rückwirkend Geld nachfordern?
-                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </span>
-              </summary>
-              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
-                Bei freiem Mietzins (z.&nbsp;B. Neubauten im Teilanwendungsbereich des MRG) kann der Vermieter
-                unter bestimmten Voraussetzungen eine unterlassene Wertsicherung nachholen. Liegt eine gültige und
-                transparente Wertsicherungsklausel (z.&nbsp;B. an den VPI gekoppelt) vor, können Differenzbeträge
-                grundsätzlich bis zu drei Jahre rückwirkend geltend gemacht werden (allgemeine Verjährungsfrist nach
-                ABGB). Unser Rechner zeigt bei freiem Mietzins einen überschlagsmäßigen Betrag, der rückwirkend
-                nachforderbar sein könnte – die konkrete Durchsetzbarkeit sollte immer rechtlich geprüft werden.
-              </div>
-            </details>
-            <details className="group">
-              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
-                Was ist die maximale Mietzinserhöhung?
-                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </span>
-              </summary>
-              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
-                Liegt die Inflation unter 3 %, gilt die volle VPI-Änderung. Bei
-                Inflation über 3 % wird der darüberliegende Teil nur zur Hälfte
-                berücksichtigt (z.B. bei 6 % Inflation ≈ 4,5 % zulässige
-                Erhöhung). Für preisgeschützte Wohnungen gelten niedrigere
-                Obergrenzen: 2026 maximal 1 %, 2027 maximal 2 %.
-              </div>
-            </details>
-            <details className="group">
-              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
-                Gilt das MieWeG auch für meinen Altvertrag?
-                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </span>
-              </summary>
-              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
-                Ja. Das MieWeG gilt für alle Wohnungsmietverträge – unabhängig
-                vom Abschlussdatum. Bei Altverträgen mit Wertsicherungsklausel
-                wird die Parallelrechnung angewendet: Maßgeblich ist der
-                niedrigere Wert aus Vertragsklausel und MieWeG-Begrenzung.
-              </div>
-            </details>
-            <details className="group">
-              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
-                Wann darf die Miete angepasst werden?
-                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </span>
-              </summary>
-              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
-                Wertsicherungen sind nur einmal jährlich zum 1. April zulässig –
-                unabhängig von abweichenden Klauseln in Ihrem Vertrag. Dies gilt
-                ab 2026 für alle von MieWeG erfassten Mietverträge.
-              </div>
-            </details>
-            <details className="group">
-              <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:bg-zinc-100 sm:min-h-0 sm:px-6 sm:py-4 [&::-webkit-details-marker]:hidden">
-                Wie prüfe ich meine Mietzinserhöhung?
-                <span className="shrink-0 pl-2 text-zinc-400 transition-transform group-open:rotate-180">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </span>
-              </summary>
-              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-600 sm:px-6 sm:py-4">
-                Geben Sie Ihre aktuelle Miete, Vertragsdaten und ggf. die
-                letzte Indexierung in den Rechner ein. Er zeigt die maximal
-                zulässige Miete. Ist die vom Vermieter geforderte Erhöhung
-                höher, können Sie sie anfechten oder rechtliche Beratung
-                einholen.
-              </div>
-            </details>
-          </div>
-        </section>
-
         <footer className="mt-10 space-y-4 sm:mt-12">
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-600">
-            <p className="font-medium text-zinc-700">Haftungsausschluss</p>
+            <p className="font-medium text-zinc-700">Hinweise &amp; Haftung</p>
             <p className="mt-2">
-              Die Berechnungen dieses Rechners dienen ausschließlich der
-              Vereinfachung und Orientierung. Es wird keine Garantie für die
-              rechtliche Richtigkeit, Vollständigkeit oder Aktualität der
-              Angaben übernommen. Insbesondere ersetzen die Ergebnisse keine
-              individuelle Prüfung durch eine sachkundige Person.
-              Nutzer:innen sollten die Berechnungen stets selbst überprüfen oder
-              rechtlichen Rat einholen, bevor sie Entscheidungen treffen oder
-              Zahlungen anpassen.
+              {SITE_DISCLAIMER_MAIN} {SITE_DISCLAIMER_NO_WARRANTY}
+            </p>
+            <p className="mt-2">{SITE_DISCLAIMER_ADVICE}</p>
+            <p className="mt-2">
+              <span className="font-medium text-zinc-700">Quellen: </span>
+              {SITE_SOURCES_LEGAL} {SITE_SOURCES_DATA}
+            </p>
+            <p className="mt-3 text-xs text-zinc-500">
+              <a
+                href={SITE_LINK_RIS}
+                className="text-red-700 underline underline-offset-2 hover:text-red-800"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {SITE_LINK_RIS_LABEL}
+              </a>
+              <span aria-hidden className="mx-1.5 text-zinc-400">
+                ·
+              </span>
+              <a
+                href={SITE_LINK_VPI}
+                className="text-red-700 underline underline-offset-2 hover:text-red-800"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {SITE_LINK_VPI_LABEL}
+              </a>
             </p>
           </div>
-          <p className="text-center text-xs text-zinc-500">
-            Nicht erfasst: Mietverträge nach dem WGG (außer § 13 Abs 4),
-            Geschäftsraummieten, Voll-Ausnahmen vom MRG. Bei negativer
-            VPI-Entwicklung bleibt die Miete unverändert.
-          </p>
+          <p className="text-center text-xs text-zinc-500">{SITE_SCOPE_LIMITS}</p>
         </footer>
       </main>
     </div>

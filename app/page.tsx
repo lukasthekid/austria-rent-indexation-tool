@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { SITE_TRUST_TAGLINE } from "@/lib/site-trust-copy";
 
 export const metadata = {
-  title: "MietCheck-AT | Mieterhöhung prüfen – kostenlos & rechtssicher",
+  title: "MietCheck-AT | Mieterhöhung nach MieWeG prüfen – kostenlos",
   description:
-    "Prüfen Sie Ihre Mieterhöhung in Österreich – 100 % kostenlos. Das neue 5. MILG und MieWeG gilt ab 1.1.2026. Unser Rechner berechnet die maximal zulässige Miete für Alt- und Neuverträge.",
+    "Mieterhöhung in Österreich rechnerisch einordnen – kostenlos, ohne Anmeldung. MieWeG / 5. MILG ab 1.1.2026, VPI Statistik Austria. Orientierung, keine Rechtsberatung.",
 };
 
 const steps = [
@@ -24,7 +25,7 @@ const steps = [
     number: "3",
     title: "Ergebnis ablesen",
     description:
-      "Maximal zulässige Miete nach MieWeG und direkter Vergleich mit dem Vermieter-Angebot.",
+      "Orientierung zur MieWeG-Obergrenze und Vergleich mit dem Vermieter-Angebot.",
   },
 ];
 
@@ -37,7 +38,7 @@ const problemPoints = [
 
 const solutionPoints = [
   "Maximal zulässige Mieterhöhung nach MieWeG",
-  "Offizielle VPI-Daten von Statistik Austria",
+  "VPI-Durchschnitte von Statistik Austria (Quelle im Rechner)",
   "Parallelrechnung für Altverträge",
   "Spot-Check: Vermieter-Angebot direkt prüfen",
 ];
@@ -61,11 +62,15 @@ export default function HomePage() {
             />
           </Link>
           <h1 className="mt-8 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-4xl lg:text-5xl">
-            Mieterhöhung bekommen? Prüfen Sie in 2 Minuten, ob sie legal ist.
+            Mieterhöhung bekommen? In wenigen Minuten nach MieWeG einordnen.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-zinc-600 sm:text-xl">
-            Neues Gesetz ab 1.1.2026. Unser Rechner zeigt die maximal zulässige
-            Miete. 100 % kostenlos, keine Anmeldung.
+            Neues Gesetz ab 1.1.2026: Der Rechner hilft bei der Orientierung zur
+            MieWeG-Obergrenze – anhand offizieller VPI-Daten. 100 % kostenlos,
+            keine Anmeldung.
+          </p>
+          <p className="mt-3 max-w-2xl text-sm text-zinc-500 sm:text-base">
+            {SITE_TRUST_TAGLINE}
           </p>
           <p className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm font-medium sm:gap-4">
             <span className="rounded-full bg-emerald-100 px-4 py-1.5 text-emerald-800">
@@ -75,7 +80,7 @@ export default function HomePage() {
               Keine Anmeldung
             </span>
             <span className="rounded-full bg-amber-100 px-4 py-1.5 text-amber-800">
-              Rechtssicher
+              Am MieWeG orientiert
             </span>
           </p>
           <Link href="/mieterhoeung-berechnen" className={`mt-8 ${ctaClassName}`}>
@@ -135,7 +140,7 @@ export default function HomePage() {
             So funktioniert der Rechner
           </h2>
           <p className="mb-12 text-center text-sm text-zinc-500 sm:text-base">
-            In drei klaren Schritten zur rechtssicheren Prüfung
+            In drei klaren Schritten zur Orientierung nach MieWeG
           </p>
           {/* Horizontale Timeline – Desktop */}
           <div className="relative hidden lg:block">
@@ -209,7 +214,7 @@ export default function HomePage() {
       <section className="border-t border-zinc-200 bg-gradient-to-b from-white to-red-50/40 px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl rounded-2xl border-2 border-red-100 bg-white px-6 py-10 text-center shadow-lg sm:px-10 sm:py-12">
           <p className="text-sm font-medium uppercase tracking-wider text-red-700/80">
-            Vertraut von Mietern in ganz Österreich
+            Für Mieterinnen und Mieter in Österreich
           </p>
           <h2 className="mt-4 text-2xl font-bold text-zinc-900 sm:text-3xl">
             Bereit? Mieterhöhung jetzt prüfen.

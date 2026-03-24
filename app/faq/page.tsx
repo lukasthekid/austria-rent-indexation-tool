@@ -222,8 +222,9 @@ export default function FaqPage() {
             Mieterhöhung jetzt konkret prüfen
           </p>
           <p className="mb-5 text-sm text-zinc-600">
-            Geben Sie Ihre Vertragsdaten in den kostenlosen Rechner ein und
-            sehen Sie sofort, ob Ihre Mieterhöhung nach MieWeG zulässig ist.
+            Geben Sie Ihre Vertragsdaten in den kostenlosen Rechner ein – Sie
+            erhalten eine nachvollziehbare Orientierung nach MieWeG (keine
+            Rechtsberatung).
           </p>
           <Link
             href="/mieterhoeung-berechnen"

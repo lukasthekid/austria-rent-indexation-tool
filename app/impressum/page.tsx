@@ -50,10 +50,11 @@ export default function ImpressumPage() {
             Haftungshinweis
           </h2>
           <p className="text-sm leading-relaxed text-zinc-700 sm:text-base">
-            Diese Website dient der allgemeinen Information. Trotz sorgfältiger
-            Erstellung der Inhalte können sich Inhalte ändern oder unvollständig
-            sein. Es wird keine Gewähr für die Richtigkeit, Vollständigkeit und
-            Aktualität der Informationen übernommen.
+            Die Inhalte dienen der allgemeinen Information und
+            Rechenorientierung zu MieWeG/MRG; ausführliche Hinweise und Quellen
+            finden Sie im Seitenfuß jeder Seite. Trotz sorgfältiger Bearbeitung
+            wird keine Gewähr für Richtigkeit, Vollständigkeit und Aktualität
+            übernommen.
           </p>
         </section>
       </main>
