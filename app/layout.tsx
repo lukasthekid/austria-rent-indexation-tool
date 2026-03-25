@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { StructuredData } from "@/components/StructuredData";
@@ -10,6 +10,12 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://mietcheck-at.verce
 const title = "MietCheck-AT | Rechner für Mietpreisbremse & MieWeG 2026 Österreich";
 const description =
   "Kostenloser Rechner: Mieterhöhung 2026 nach MieWeG einordnen (Alt- und Neuvertrag). 3%-Kappung, April-Valorisierung, Parallelrechnung. Orientierung an Gesetz und VPI (Statistik Austria); keine Rechtsberatung.";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: {

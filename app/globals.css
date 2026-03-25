@@ -26,6 +26,101 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Landing page: reveal + texture (scoped via .landing-page) */
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Horizontal safe area + section padding (mobile notches, landscape) */
+.landing-px {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+@media (min-width: 640px) {
+  .landing-px {
+    padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-px {
+    padding-left: max(2rem, env(safe-area-inset-left, 0px));
+    padding-right: max(2rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+@media (min-width: 1536px) {
+  .landing-px {
+    padding-left: max(2.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(2.5rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+.landing-page {
+  font-family: var(--font-landing-body), ui-sans-serif, system-ui, sans-serif;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.landing-page .landing-display {
+  font-family: var(--font-landing-display), ui-serif, Georgia, serif;
+}
+
+.landing-reveal {
+  animation: landing-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.landing-reveal-delay-1 {
+  animation-delay: 0.08s;
+}
+.landing-reveal-delay-2 {
+  animation-delay: 0.16s;
+}
+.landing-reveal-delay-3 {
+  animation-delay: 0.24s;
+}
+.landing-reveal-delay-4 {
+  animation-delay: 0.32s;
+}
+.landing-reveal-delay-5 {
+  animation-delay: 0.4s;
+}
+
+.landing-grain {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (min-width: 1024px) {
+  .landing-grain {
+    opacity: 0.28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-reveal,
+  .landing-reveal-delay-1,
+  .landing-reveal-delay-2,
+  .landing-reveal-delay-3,
+  .landing-reveal-delay-4,
+  .landing-reveal-delay-5 {
+    animation: none;
+  }
+}
+
 /* Verhindert iOS-Zoom bei Fokus auf Input (min 16px) */
 @media (max-width: 640px) {
   input, select, textarea {
