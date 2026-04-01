@@ -42,7 +42,29 @@ export default function ImpressumPage() {
               <br />
               {company.country}
             </p>
+            <p>
+              Firmenbuchnummer: FN 640871 h
+            </p>
           </div>
+        </section>
+
+        <section className="mt-6 space-y-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+          <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl">
+            Online-Streitbeilegung
+          </h2>
+          <p className="text-sm leading-relaxed text-zinc-700 sm:text-base">
+            Gemäß Art. 14 Abs. 1 ODR-VO stellt die Europäische Kommission eine
+            Plattform zur Online-Streitbeilegung (OS) bereit, die Sie unter{" "}
+            <a
+              href="http://ec.europa.eu/consumers/odr/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline hover:text-blue-800"
+            >
+              http://ec.europa.eu/consumers/odr/
+            </a>{" "}
+            finden.
+          </p>
         </section>
 
         <section className="mt-6 space-y-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
