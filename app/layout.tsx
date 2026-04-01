@@ -57,20 +57,11 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "MietCheck-AT",
     url: SITE_URL,
-    images: [
-      {
-        url: "/MietCheck-logo.png",
-        width: 512,
-        height: 512,
-        alt: "MietCheck-AT – Rechner für Mietpreisbremse & MieWeG 2026",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
-    images: ["/MietCheck-logo.png"],
   },
   robots: { index: true, follow: true },
   alternates: { canonical: "/" },
