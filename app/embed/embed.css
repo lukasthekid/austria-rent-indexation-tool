@@ -1,0 +1,6 @@
+/* Nur /embed: Typo/Shell angelehnt an LexisNexis (Lato kommt aus next/font). */
+.embed-shell-inner {
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+}

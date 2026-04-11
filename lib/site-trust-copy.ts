@@ -17,6 +17,10 @@ export const SITE_TRUST_TAGLINE =
 export const SITE_DISCLAIMER_MAIN =
   "MietCheck-AT bietet allgemeine Information und eine unabhängige Rechenorientierung zu vertraglichen Wertsicherungen nach dem Mieten-Wertsicherungsgesetz (MieWeG) im Anwendungsbereich des Mietrechtsgesetzes (MRG).";
 
+/** Einbettung (iframe): ohne Produktnamen im Fließtext. */
+export const EMBED_DISCLAIMER_MAIN =
+  "Dieses Tool stellt allgemeine Information und eine unabhängige Rechenorientierung zu vertraglichen Wertsicherungen nach dem Mieten-Wertsicherungsgesetz (MieWeG) im Anwendungsbereich des Mietrechtsgesetzes (MRG) bereit.";
+
 export const SITE_DISCLAIMER_NO_WARRANTY =
   "Es wird keine Gewähr für die rechtliche Richtigkeit, Vollständigkeit oder Aktualität der dargestellten Inhalte und Rechnerergebnisse übernommen.";
 

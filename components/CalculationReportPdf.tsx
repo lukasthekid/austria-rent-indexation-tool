@@ -30,6 +30,11 @@ const styles = StyleSheet.create({
     fontWeight: 700,
     color: "#b91c1c",
   },
+  logoTextEmbed: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#006997",
+  },
   logoSubline: {
     fontSize: 8.5,
     color: "#6b7280",
@@ -171,9 +176,14 @@ function fmtStepRate(
 
 type Props = {
   payload: CalculationReportPayload;
+  /** Ohne MietCheck-Branding (z. B. iframe-Einbettung). */
+  variant?: "default" | "embed";
 };
 
-export default function CalculationReportPdf({ payload }: Props) {
+export default function CalculationReportPdf({
+  payload,
+  variant = "default",
+}: Props) {
   const isParallel = payload.parallelResult != null;
   const trace = payload.calculationTrace;
   const vpiAuditLines = trace.vpiDerivation.map((item) => {
@@ -183,12 +193,21 @@ export default function CalculationReportPdf({ payload }: Props) {
     return `VPI ${item.inflationYear}: ${item.formula} (Quelle: ${item.source})`;
   });
 
+  const docTitle =
+    variant === "embed" ? "Berechnungsblatt" : "MietCheck Berechnungsblatt";
+
   return (
-    <Document title="MietCheck Berechnungsblatt">
+    <Document title={docTitle}>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View style={styles.logoBlock}>
-            <Text style={styles.logoText}>MietCheck-AT</Text>
+            <Text
+              style={
+                variant === "embed" ? styles.logoTextEmbed : styles.logoText
+              }
+            >
+              {variant === "embed" ? "Orientierung" : "MietCheck-AT"}
+            </Text>
             <Text style={styles.logoSubline}>Mieten-Wertsicherungsrechner</Text>
           </View>
           <View>

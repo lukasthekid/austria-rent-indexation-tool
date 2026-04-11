@@ -39,8 +39,13 @@ import {
   YAxis,
 } from "recharts";
 import CalculationReportPdf from "@/components/CalculationReportPdf";
+import {
+  CALCULATOR_UI,
+  type CalculatorVariant,
+} from "@/lib/calculator-ui-presets";
 import { buildCalculationReportPayload } from "@/lib/report-payload";
 import {
+  EMBED_DISCLAIMER_MAIN,
   SITE_DISCLAIMER_ADVICE,
   SITE_DISCLAIMER_MAIN,
   SITE_DISCLAIMER_NO_WARRANTY,
@@ -108,9 +113,11 @@ function asNumber(value: unknown): number | null {
 function AliquotierungTimeline({
   startMonthIndex,
   months,
+  accentHex,
 }: {
   startMonthIndex: number;
   months: string[];
+  accentHex: string;
 }) {
   const width = 400;
   const height = 72;
@@ -160,7 +167,7 @@ function AliquotierungTimeline({
         y1={padding.top}
         x2={startX}
         y2={strokeLineY}
-        stroke="#c8102e"
+        stroke={accentHex}
         strokeWidth={3}
         strokeLinecap="round"
       />
@@ -170,13 +177,13 @@ function AliquotierungTimeline({
         y1={strokeLineY}
         x2={endX - arrowSize * 0.6}
         y2={strokeLineY}
-        stroke="#c8102e"
+        stroke={accentHex}
         strokeWidth={2}
       />
       {/* Arrowhead */}
       <polygon
         points={`${endX},${strokeLineY} ${endX - arrowSize},${strokeLineY - arrowSize / 2} ${endX - arrowSize},${strokeLineY + arrowSize / 2}`}
-        fill="#c8102e"
+        fill={accentHex}
       />
     </svg>
   );
@@ -194,7 +201,15 @@ const WIZARD_STEP_ORDER: WizardStep[] = [
 type ContractMode = "neuvertrag" | "altvertrag";
 type AltvertragClause = ClauseType | "unknown";
 
-export default function RentCalculator() {
+type RentCalculatorProps = {
+  variant?: CalculatorVariant;
+};
+
+export default function RentCalculator({ variant = "site" }: RentCalculatorProps) {
+  const ui = CALCULATOR_UI[variant];
+  const disclaimerMain =
+    variant === "embedLexis" ? EMBED_DISCLAIMER_MAIN : SITE_DISCLAIMER_MAIN;
+
   const [step, setStep] = useState<WizardStep>("vertragsart");
 
   // Step 1: Vertragstyp
@@ -538,8 +553,10 @@ export default function RentCalculator() {
   const pdfFileName = useMemo(() => {
     const date = new Date().toISOString().slice(0, 10);
     const modePrefix = showParallel ? "parallelrechnung" : "mieweg";
-    return `mietcheck-berechnungsblatt-${modePrefix}-${date}.pdf`;
-  }, [showParallel]);
+    return variant === "embedLexis"
+      ? `berechnungsblatt-${modePrefix}-${date}.pdf`
+      : `mietcheck-berechnungsblatt-${modePrefix}-${date}.pdf`;
+  }, [showParallel, variant]);
 
   const miewegTimelineData = useMemo(() => {
     if (!showResult?.multiYearSteps || showResult.multiYearSteps.length === 0)
@@ -654,7 +671,11 @@ export default function RentCalculator() {
       : null;
 
   return (
-    <div className="overflow-x-hidden bg-zinc-50 font-sans">
+    <div
+      className={`overflow-x-hidden font-sans ${
+        variant === "embedLexis" ? "bg-white" : "bg-zinc-50"
+      }`}
+    >
       <main className="mx-auto max-w-2xl px-4 pb-8 pt-2 sm:px-6 sm:pb-10 sm:pt-3 lg:px-8">
         <header className="mb-6 flex flex-col gap-3 border-b border-zinc-200 pb-6 sm:mb-8 sm:gap-4 sm:pb-8">
           <h2 className="text-xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl">
@@ -703,13 +724,13 @@ export default function RentCalculator() {
                   }
                   className={`flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 transition-colors sm:min-h-0 sm:rounded-md sm:px-2 sm:py-1 ${
                     step === s
-                      ? "bg-red-50 font-semibold text-red-700"
+                      ? ui.wizardStepActive
                       : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
                   } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent`}
                 >
                   <span
                         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-medium sm:h-5 sm:w-5 ${
-                      step === s ? "bg-red-600 text-white" : "bg-zinc-200 text-zinc-600"
+                      step === s ? ui.wizardStepBadge : "bg-zinc-200 text-zinc-600"
                     }`}
                   >
                     {i + 1}
@@ -762,7 +783,7 @@ export default function RentCalculator() {
                     key={val}
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                       effectiveMode === val
-                        ? "border-red-600 bg-red-50"
+                        ? ui.radioCardSelected
                         : "border-zinc-200 hover:border-zinc-300"
                     } ${isNeuvertragUnavailable ? "opacity-90" : ""}`}
                   >
@@ -782,7 +803,7 @@ export default function RentCalculator() {
                           }
                         }
                       }}
-                      className="mt-1 h-4 w-4 text-red-600 focus:ring-red-600"
+                      className={ui.radioInput}
                     />
                     <div className="flex-1">
                       <span className="block text-sm font-medium text-zinc-900">
@@ -824,7 +845,7 @@ export default function RentCalculator() {
                   <label
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                       altHadValorisation === false
-                        ? "border-red-600 bg-red-50"
+                        ? ui.radioCardSelected
                         : "border-zinc-200 hover:border-zinc-300"
                     }`}
                   >
@@ -836,7 +857,7 @@ export default function RentCalculator() {
                         setAltHadValorisation(false);
                         setAltLastValorisationDate("");
                       }}
-                      className="mt-1 h-4 w-4 text-red-600 focus:ring-red-600"
+                      className={ui.radioInput}
                     />
                     <span className="text-sm font-medium text-zinc-900">
                       Nein, noch keine Anpassung
@@ -845,7 +866,7 @@ export default function RentCalculator() {
                   <label
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                       altHadValorisation === true
-                        ? "border-red-600 bg-red-50"
+                        ? ui.radioCardSelected
                         : "border-zinc-200 hover:border-zinc-300"
                     }`}
                   >
@@ -854,7 +875,7 @@ export default function RentCalculator() {
                       name="altHadValorisation"
                       checked={altHadValorisation === true}
                       onChange={() => setAltHadValorisation(true)}
-                      className="mt-1 h-4 w-4 text-red-600 focus:ring-red-600"
+                      className={ui.radioInput}
                     />
                     <span className="text-sm font-medium text-zinc-900">
                       Ja
@@ -966,7 +987,7 @@ export default function RentCalculator() {
                       key={val}
                       className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
                         altvertragClause === val
-                          ? "border-red-600 bg-red-50"
+                          ? ui.radioCardSelected
                           : "border-zinc-200 hover:border-zinc-300"
                       }`}
                     >
@@ -976,7 +997,7 @@ export default function RentCalculator() {
                         value={val}
                         checked={altvertragClause === val}
                         onChange={() => setAltvertragClause(val)}
-                        className="mt-0.5 h-4 w-4 text-red-600 focus:ring-red-600"
+                        className={ui.radioInputCompact}
                       />
                       <div>
                         <span className="block text-sm font-medium text-zinc-900">
@@ -997,7 +1018,7 @@ export default function RentCalculator() {
                 type="button"
                 onClick={() => goToStep("grunddaten")}
                 disabled={!canProceedFromStep1}
-                className="min-h-[44px] w-full rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:w-auto sm:py-2.5"
+                className={ui.primaryButtonWide}
               >
                 Weiter
               </button>
@@ -1044,7 +1065,7 @@ export default function RentCalculator() {
                     setContractDate(next);
                   }
                 }}
-                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                className={ui.textInput}
               />
               <p className="mt-1 text-xs text-zinc-500">
                 Datum, an dem Sie den Mietvertrag unterschrieben haben. Nicht
@@ -1065,7 +1086,7 @@ export default function RentCalculator() {
                 min="0"
                 value={currentRent}
                 onChange={(e) => setCurrentRent(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                className={ui.textInput}
               />
               <p className="mt-1 text-xs text-zinc-500">
                 Die Miete, die Sie derzeit zahlen (inkl. letzter Anpassung falls
@@ -1085,7 +1106,7 @@ export default function RentCalculator() {
                 onChange={(e) =>
                   setApartmentType(e.target.value as ApartmentType)
                 }
-                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                className={ui.textInput}
               >
                 <option value="free">
                   Freier Mietzins – z.B. Neubau, teilanwendungsbereich MRG
@@ -1112,7 +1133,7 @@ export default function RentCalculator() {
                 type="button"
                 onClick={() => goToStep("details")}
                 disabled={!canProceedFromStep2}
-                className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-2.5"
+                className={ui.primaryButtonFlex}
               >
                 Weiter
               </button>
@@ -1144,7 +1165,7 @@ export default function RentCalculator() {
                     onChange={(e) =>
                       setValorisationYear(Number(e.target.value))
                     }
-                    className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                    className={ui.textInput}
                   >
                     {VALORISATION_YEARS.map((y) => (
                       <option key={y} value={y}>
@@ -1179,7 +1200,7 @@ export default function RentCalculator() {
                     }
                     value={customVpi}
                     onChange={(e) => setCustomVpi(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                    className={ui.textInput}
                   />
                   <p className="mt-1 text-xs text-zinc-500">
                     Nur anpassen, wenn Sie andere Inflationsdaten verwenden
@@ -1198,7 +1219,7 @@ export default function RentCalculator() {
                     type="date"
                     value={lastValorisationDate}
                     onChange={(e) => setLastValorisationDate(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                    className={ui.textInput}
                   />
                   <p className="mt-1 text-xs text-zinc-500">
                     Wenn Ihre Miete bereits angehoben wurde: Monat der
@@ -1211,7 +1232,7 @@ export default function RentCalculator() {
                         type="checkbox"
                         checked={alreadyInMieWeG}
                         onChange={(e) => setAlreadyInMieWeG(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-red-600 focus:ring-red-600"
+                        className={ui.checkboxInput}
                       />
                       <span>
                         Letzte Anpassung war bereits nach MieWeG (ab 1.4.2026)
@@ -1239,7 +1260,7 @@ export default function RentCalculator() {
                       onChange={(e) =>
                         setAltTargetYear(Number(e.target.value))
                       }
-                      className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                      className={ui.textInput}
                     >
                       {VALORISATION_YEARS.map((y) => (
                         <option key={y} value={y}>
@@ -1269,7 +1290,7 @@ export default function RentCalculator() {
                         onChange={(e) =>
                           setVpiBase(e.target.value as VpiBaseName)
                         }
-                        className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                        className={ui.textInput}
                       >
                         {VPI_BASE_NAMES.map((name) => (
                           <option key={name} value={name}>
@@ -1302,7 +1323,7 @@ export default function RentCalculator() {
                         onChange={(e) =>
                           setAdjustmentMonth(Number(e.target.value))
                         }
-                        className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                        className={ui.textInput}
                       >
                         {months.map((m, i) => (
                           <option key={i} value={i}>
@@ -1333,7 +1354,7 @@ export default function RentCalculator() {
                           min="0"
                           value={thresholdPercent}
                           onChange={(e) => setThresholdPercent(e.target.value)}
-                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                          className={ui.textInput}
                         />
                         <p className="mt-1 text-xs text-zinc-500">
                           Ab welcher kumulativen VPI-Änderung wird die Miete
@@ -1359,7 +1380,7 @@ export default function RentCalculator() {
                           }
                           value={baseIndexValue}
                           onChange={(e) => setBaseIndexValue(e.target.value)}
-                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                          className={ui.textInput}
                         />
                         {defaultBaseIndex != null && !baseIndexValue && (
                           <button
@@ -1367,7 +1388,7 @@ export default function RentCalculator() {
                             onClick={() =>
                               setBaseIndexValue(defaultBaseIndex.toFixed(1))
                             }
-                            className="mt-1.5 text-xs text-red-600 hover:underline"
+                            className={ui.linkAccentSmall}
                           >
                             Ø {contractYear} übernehmen:{" "}
                             {defaultBaseIndex.toFixed(1)}
@@ -1380,7 +1401,7 @@ export default function RentCalculator() {
                             href="https://data.statistik.gv.at"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-red-600 hover:underline"
+                            className={ui.linkAccent}
                           >
                             data.statistik.gv.at
                           </a>
@@ -1442,7 +1463,7 @@ export default function RentCalculator() {
                           min="0"
                           value={staffelValue}
                           onChange={(e) => setStaffelValue(e.target.value)}
-                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                          className={ui.textInput}
                         />
                       </div>
                       <div>
@@ -1458,7 +1479,7 @@ export default function RentCalculator() {
                           onChange={(e) =>
                             setStaffelMonth(Number(e.target.value))
                           }
-                          className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                          className={ui.textInput}
                         >
                           {months.map((m, i) => (
                             <option key={i} value={i}>
@@ -1489,7 +1510,7 @@ export default function RentCalculator() {
                     ? "Ergänzen Sie die Pflichtfelder in diesem Schritt (z. B. Basis-Indexwert bei Schwellenwert-Klausel)."
                     : undefined
                 }
-                className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-2.5"
+                className={ui.primaryButtonFlex}
               >
                 Berechnen
               </button>
@@ -1570,7 +1591,7 @@ export default function RentCalculator() {
                             type="monotone"
                             dataKey="rentEur"
                             name="Miete"
-                            stroke="#c8102e"
+                            stroke={ui.chartAccentHex}
                             strokeWidth={2}
                             dot={{ r: 3 }}
                           />
@@ -1639,7 +1660,7 @@ export default function RentCalculator() {
                                 Keine Erhöhung
                               </span>
                             ) : s.binding === "mieweg" ? (
-                              <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 ">
+                              <span className={ui.tableBadgeMieweg}>
                                 MieWeG begrenzt
                               </span>
                             ) : s.binding === "vertrag" ? (
@@ -1683,6 +1704,7 @@ export default function RentCalculator() {
                     <AliquotierungTimeline
                       startMonthIndex={12 - aliquotVisual.fullMonths}
                       months={months}
+                      accentHex={ui.chartAccentHex}
                     />
                   </div>
                   <div className="shrink-0 sm:w-48">
@@ -1767,7 +1789,7 @@ export default function RentCalculator() {
                   placeholder="z.B. 830"
                   value={proposedRent}
                   onChange={(e) => setProposedRent(e.target.value)}
-                  className="mt-1 block w-full max-w-xs min-h-[44px] rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-base text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600 sm:min-h-0 sm:py-2"
+                  className={ui.proposedRentInput}
                 />
                 {proposedValid && (
                   <p className="mt-2 text-sm font-medium text-green-600">
@@ -1776,7 +1798,7 @@ export default function RentCalculator() {
                   </p>
                 )}
                 {proposedInvalid && (
-                  <p className="mt-2 text-sm font-medium text-red-600">
+                  <p className={ui.textDanger}>
                     Die vorgeschlagene Miete überschreitet den maximal
                     zulässigen Betrag von {formatEur(finalRent)}.
                   </p>
@@ -1795,9 +1817,16 @@ export default function RentCalculator() {
                 </p>
                 <div className="mt-4">
                   <PDFDownloadLink
-                    document={<CalculationReportPdf payload={reportPayload} />}
+                    document={
+                      <CalculationReportPdf
+                        payload={reportPayload}
+                        variant={
+                          variant === "embedLexis" ? "embed" : "default"
+                        }
+                      />
+                    }
                     fileName={pdfFileName}
-                    className="inline-flex min-h-[44px] items-center rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 active:bg-red-800"
+                    className={ui.pdfButton}
                   >
                     {({ loading }) =>
                       loading ? "PDF wird erstellt..." : "PDF herunterladen"
@@ -1821,7 +1850,7 @@ export default function RentCalculator() {
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-600">
             <p className="font-medium text-zinc-700">Hinweise &amp; Haftung</p>
             <p className="mt-2">
-              {SITE_DISCLAIMER_MAIN} {SITE_DISCLAIMER_NO_WARRANTY}
+              {disclaimerMain} {SITE_DISCLAIMER_NO_WARRANTY}
             </p>
             <p className="mt-2">{SITE_DISCLAIMER_ADVICE}</p>
             <p className="mt-2">
@@ -1831,7 +1860,7 @@ export default function RentCalculator() {
             <p className="mt-3 text-xs text-zinc-500">
               <a
                 href={SITE_LINK_RIS}
-                className="text-red-700 underline underline-offset-2 hover:text-red-800"
+                className={ui.footerLink}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1842,7 +1871,7 @@ export default function RentCalculator() {
               </span>
               <a
                 href={SITE_LINK_VPI}
-                className="text-red-700 underline underline-offset-2 hover:text-red-800"
+                className={ui.footerLink}
                 target="_blank"
                 rel="noopener noreferrer"
               >
