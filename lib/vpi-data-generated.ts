@@ -2,7 +2,7 @@
  * AUTO-GENERATED from Statistik Austria ODS – do not edit manually.
  * Run: npm run update-vpi
  * Source: https://www.statistik.at/fileadmin/pages/214/2_Verbraucherpreisindizes_ab_1990.ods
- * Generated: 2026-04-06
+ * Generated: 2026-04-13
  */
 
 export type VpiBaseName = 'VPI 2025' | 'VPI 2020' | 'VPI 2015' | 'VPI 2010' | 'VPI 2005' | 'VPI 2000' | 'VPI 1996' | 'VPI 1986';
